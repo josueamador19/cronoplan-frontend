@@ -2,9 +2,11 @@
 import React from 'react';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 import { navLinks } from '../../constants/data';
+import { useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
 
 const NavigationBar = () => {
+  const navigate = useNavigate();
   return (
     <Navbar bg="light" expand="lg" className="py-3" sticky="top">
       <Container>
@@ -45,10 +47,10 @@ const NavigationBar = () => {
           </Nav>
           
           <div className="d-flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
               Iniciar sesión
             </Button>
-            <Button variant="primary" size="sm">
+            <Button variant="primary" size="sm" onClick={() => navigate('/register')}>
               Comenzar gratis
             </Button>
           </div>
