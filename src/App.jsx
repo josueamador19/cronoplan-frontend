@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import TasksPage from './pages/TasksPage';
 import BoardPage from './pages/BoardPage';
+import TaskModalExample from './pages/TaskModalExample';
 import './App.css';
 
 function App() {
@@ -21,6 +22,9 @@ function App() {
         <Route path="/dashboard" element={<TasksPage />} />
         <Route path="/dashboard/tasks" element={<TasksPage />} />
         <Route path="/dashboard/board/:id" element={<BoardPage />} />
+        
+        {/* Ruta de prueba del modal */}
+        <Route path="/modal-test" element={<TaskModalExample />} />
       </Routes>
     </Router>
   );
