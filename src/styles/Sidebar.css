@@ -1,0 +1,133 @@
+/* Agregar estos estilos a tu archivo sidebar.css o styles.css */
+
+/* Lista de boards mejorada */
+.board-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.board-list-item:hover {
+  background-color: rgba(24, 144, 255, 0.08);
+}
+
+.board-list-item.active {
+  background-color: rgba(24, 144, 255, 0.15);
+  font-weight: 600;
+}
+
+.board-color-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.board-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.board-task-count {
+  background-color: #f0f0f0;
+  color: #666;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.board-list-item.active .board-task-count {
+  background-color: #1890ff;
+  color: white;
+}
+
+/* Sección de tableros */
+.sidebar-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.add-board-icon {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.add-board-icon:hover {
+  background-color: rgba(24, 144, 255, 0.15);
+  color: #1890ff;
+}
+
+/* Botón de nuevo tablero */
+.new-board-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  margin: 16px;
+  padding: 10px;
+  background-color: transparent;
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  color: #999;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.new-board-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+  background-color: rgba(24, 144, 255, 0.05);
+}
+
+/* Logo clickeable */
+.sidebar-logo {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebar-logo:hover {
+  opacity: 0.8;
+}
+
+/* Items del menú */
+.sidebar-item {
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.sidebar-item:hover {
+  background-color: rgba(24, 144, 255, 0.08);
+}
+
+/* Búsqueda */
+.sidebar-search {
+  cursor: pointer;
+}
+
+.sidebar-search:focus {
+  cursor: text;
+}

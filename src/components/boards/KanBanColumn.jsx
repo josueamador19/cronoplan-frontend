@@ -1,35 +1,69 @@
 // src/components/boards/KanbanColumn.jsx
 import React from 'react';
-import { FaEllipsisH, FaPlus } from 'react-icons/fa';
 import TaskCard from './TaskCard';
 
-const KanbanColumn = ({ column, tasks = [], onAddTask, onTaskClick }) => {
+const KanbanColumn = ({ 
+  column, 
+  tasks = [], 
+  onAddTask, 
+  onTaskClick,
+  onDragStart,
+  onDrop,
+  isDragging,
+  isDropTarget
+}) => {
+  
+  const handleDragOver = (e) => {
+    e.preventDefault(); // Necesario para permitir el drop
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (onDrop) {
+      onDrop();
+    }
+  };
+
   return (
-    <div className="kanban-column">
+    <div 
+      className={`kanban-column ${isDropTarget ? 'drop-target' : ''}`}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="kanban-column-header">
-        <div className="kanban-column-title">
-          <span>{column.title}</span>
-          <span className="task-count">{tasks.length}</span>
+        <div className="column-title">
+          <h3>{column.title}</h3>
+          <span className="column-count">{tasks.length}</span>
         </div>
-        <button className="column-menu-btn">
-          <FaEllipsisH />
-        </button>
+        {onAddTask && (
+          <button className="add-task-btn" onClick={onAddTask} title="Agregar tarea">
+            +
+          </button>
+        )}
       </div>
 
-      <div className="kanban-tasks">
-        {tasks.map(task => (
-          <TaskCard 
-            key={task.id}
-            task={task}
-            onClick={() => onTaskClick && onTaskClick(task)}
-          />
-        ))}
+      <div className="kanban-column-content">
+        {tasks.length === 0 ? (
+          <div className="empty-column">
+            <p>No hay tareas</p>
+            {onAddTask && (
+              <button onClick={onAddTask} className="add-task-btn-empty">
+                + Agregar tarea
+              </button>
+            )}
+          </div>
+        ) : (
+          tasks.map(task => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onTaskClick && onTaskClick(task)}
+              onDragStart={() => onDragStart && onDragStart(task)}
+              draggable={true}
+            />
+          ))
+        )}
       </div>
-
-      <button className="add-task-btn" onClick={onAddTask}>
-        <FaPlus />
-        Añadir actividad
-      </button>
     </div>
   );
 };
