@@ -1,53 +1,49 @@
-// src/components/layout/TopBar.jsx
-import React, { useState } from 'react';
-import { FaBell } from 'react-icons/fa';
+import React, { useState, useRef, useEffect } from 'react';
+import { FaBell, FaUserEdit, FaSignOutAlt } from 'react-icons/fa';
 import Button from '../ui/Button';
 import CreateBoardModal from '../modals/CreateBoardModal';
 import CreateTaskModal from '../modals/CreateTaskModal';
+import { logoutUser, getStoredUser } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
 
-const TopBar = ({ 
-  title, 
-  subtitle, 
+
+const TopBar = ({
+  title,
+  subtitle,
   showActions = true,
-  currentBoardId = null, // Para pre-seleccionar el board actual
-  onBoardCreated, // Callback cuando se crea un board
-  onTaskCreated // Callback cuando se crea una tarea
+  currentBoardId = null,
+  onBoardCreated,
+  onTaskCreated
 }) => {
   const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Manejar apertura de modales
-  const handleOpenBoardModal = () => {
-    setIsBoardModalOpen(true);
-  };
+  const menuRef = useRef(null);
 
-  const handleOpenTaskModal = () => {
-    setIsTaskModalOpen(true);
-  };
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  // Manejar cierre de modales
-  const handleCloseBoardModal = () => {
-    setIsBoardModalOpen(false);
-  };
+  const navigate = useNavigate();
+const user = getStoredUser();
 
-  const handleCloseTaskModal = () => {
-    setIsTaskModalOpen(false);
-  };
+const handleLogout = async () => {
+  await logoutUser();
+  navigate('/');
+};
 
-  // Callbacks de éxito
-  const handleBoardCreated = (newBoard) => {
-    console.log('✅ Board creado desde TopBar:', newBoard);
-    if (onBoardCreated) {
-      onBoardCreated(newBoard);
-    }
-  };
+const handleEditProfile = () => {
+  navigate('/dashboard/profile');
+};
 
-  const handleTaskCreated = (newTask) => {
-    console.log('✅ Tarea creada desde TopBar:', newTask);
-    if (onTaskCreated) {
-      onTaskCreated(newTask);
-    }
-  };
 
   return (
     <>
@@ -60,48 +56,55 @@ const TopBar = ({
         <div className="top-bar-actions">
           {showActions && (
             <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleOpenBoardModal}
-              >
+              <Button variant="outline" size="sm" onClick={() => setIsBoardModalOpen(true)}>
                 📊 Crear Tablero
               </Button>
-              <Button 
-                variant="primary" 
-                size="sm"
-                onClick={handleOpenTaskModal}
-              >
+              <Button variant="primary" size="sm" onClick={() => setIsTaskModalOpen(true)}>
                 ➕ Crear Actividad
               </Button>
             </>
           )}
-          
+
           <div className="notification-icon">
             <FaBell />
             <span className="notification-badge">3</span>
           </div>
 
-          <img 
-            src="https://i.pravatar.cc/150?img=12" 
-            alt="Usuario" 
-            className="user-avatar"
-          />
+          {/* AVATAR + MENU */}
+          <div className="user-menu" ref={menuRef}>
+            <img
+              src="https://i.pravatar.cc/150?img=12"
+              alt="Usuario"
+              className="user-avatar"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            />
+
+            {isMenuOpen && (
+              <div className="user-dropdown">
+                <button onClick={handleEditProfile}>
+                  <FaUserEdit />
+                  Editar perfil
+                </button>
+                <button className="logout" onClick={handleLogout}>
+                  <FaSignOutAlt />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Modal para crear tablero */}
       <CreateBoardModal
         isOpen={isBoardModalOpen}
-        onClose={handleCloseBoardModal}
-        onSuccess={handleBoardCreated}
+        onClose={() => setIsBoardModalOpen(false)}
+        onSuccess={onBoardCreated}
       />
 
-      {/* Modal para crear tarea */}
       <CreateTaskModal
         isOpen={isTaskModalOpen}
-        onClose={handleCloseTaskModal}
-        onSuccess={handleTaskCreated}
+        onClose={() => setIsTaskModalOpen(false)}
+        onSuccess={onTaskCreated}
         defaultBoardId={currentBoardId}
       />
     </>
