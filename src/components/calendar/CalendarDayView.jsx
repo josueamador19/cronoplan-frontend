@@ -1,34 +1,26 @@
-// src/components/calendar/CalendarDayView.jsx
+
 import React from 'react';
+import { parseLocalDate, isSameDay, isToday as checkIsToday } from '../../utils/dateUtils';
 
 const CalendarDayView = ({ tasks, currentDate, onTaskClick, onCreateTask }) => {
   
-  // Obtener tareas para el día actual
+  
   const getDayTasks = () => {
     return tasks.filter(task => {
       if (!task.due_date) return false;
       
-      const taskDate = new Date(task.due_date);
-      return (
-        taskDate.getDate() === currentDate.getDate() &&
-        taskDate.getMonth() === currentDate.getMonth() &&
-        taskDate.getFullYear() === currentDate.getFullYear()
-      );
+      const taskDate = parseLocalDate(task.due_date);
+      return isSameDay(taskDate, currentDate);
     });
   };
 
-  // Generar horas del día (6 AM - 11 PM)
+
   const hours = Array.from({ length: 18 }, (_, i) => i + 6);
   const dayTasks = getDayTasks();
 
   // Verificar si es hoy
   const isToday = () => {
-    const today = new Date();
-    return (
-      currentDate.getDate() === today.getDate() &&
-      currentDate.getMonth() === today.getMonth() &&
-      currentDate.getFullYear() === today.getFullYear()
-    );
+    return checkIsToday(currentDate);
   };
 
   // Formatear fecha completa
@@ -110,9 +102,13 @@ const CalendarDayView = ({ tasks, currentDate, onTaskClick, onCreateTask }) => {
 
             {/* Eventos del día */}
             {dayTasks.map(task => {
-              // Por simplicidad, distribuir tareas a lo largo del día
-              const randomHour = 6 + Math.floor(Math.random() * 12);
-              const topPosition = (randomHour - 6) * 60;
+              
+              const timeStr = task.due_time || '08:00';
+              const [hour, minute] = timeStr.split(':').map(Number);
+              
+              // Ajustar a la escala del día (6 AM = posición 0)
+              const topPosition = ((hour - 6) * 60) + minute;
+              const endHour = hour + 1;
               
               return (
                 <div
@@ -128,7 +124,7 @@ const CalendarDayView = ({ tasks, currentDate, onTaskClick, onCreateTask }) => {
                   onClick={() => onTaskClick(task)}
                 >
                   <div className="day-event-time">
-                    {randomHour.toString().padStart(2, '0')}:00 - {(randomHour + 1).toString().padStart(2, '0')}:00
+                    {timeStr} - {endHour.toString().padStart(2, '0')}:{minute.toString().padStart(2, '0')}
                   </div>
                   <div className="day-event-title">{task.title}</div>
                   {task.description && (

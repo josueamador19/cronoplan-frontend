@@ -1,5 +1,5 @@
-// src/components/auth/LoginForm.jsx
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InputField from '../ui/InputField';
 import PasswordInput from '../ui/PasswordInput';
@@ -18,6 +18,15 @@ const LoginForm = ({ onGoogleLogin }) => {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [sessionExpiredMessage, setSessionExpiredMessage] = useState('');
+
+  // Verificar si llegó por sesión expirada
+  useEffect(() => {
+    const redirectPath = localStorage.getItem('redirect_after_login');
+    if (redirectPath) {
+      setSessionExpiredMessage('Tu sesión expiró. Por favor, inicia sesión nuevamente.');
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -65,14 +74,24 @@ const LoginForm = ({ onGoogleLogin }) => {
         // Guardar token y usuario
         saveAuthData(response);
         
-        // Mostrar mensaje de éxito
-        console.log('✅ Login exitoso:', response.user);
         
-        // Redirigir al dashboard
-        navigate('/dashboard');
+        //console.log('Login exitoso:', response.user);
+        
+        // Verificar si hay una URL de redirección guardada
+        const redirectPath = localStorage.getItem('redirect_after_login');
+        
+        if (redirectPath) {
+          // Limpiar la URL guardada
+          localStorage.removeItem('redirect_after_login');
+          // Redirigir a la página donde estaba
+          navigate(redirectPath);
+        } else {
+          // Redirigir al dashboard por defecto
+          navigate('/dashboard');
+        }
         
       } catch (error) {
-        console.error('❌ Error en el login:', error);
+        console.error('Error en el login:', error);
         
         // Manejar errores del backend
         if (error.response?.data?.detail) {
@@ -93,7 +112,7 @@ const LoginForm = ({ onGoogleLogin }) => {
           }
         } else if (error.request) {
           setErrors({ 
-            general: '❌ No se pudo conectar con el servidor. Verifica que tu backend esté corriendo en http://localhost:8000' 
+            general: 'No se pudo conectar con el servidor. Intenta más tarde.' 
           });
         } else {
           setErrors({ general: 'Error inesperado. Intenta de nuevo.' });
@@ -110,6 +129,29 @@ const LoginForm = ({ onGoogleLogin }) => {
 
   return (
     <form onSubmit={handleSubmit}>
+      {/* Mensaje de sesión expirada */}
+      {sessionExpiredMessage && (
+        <div className="session-expired-warning" style={{
+          backgroundColor: '#fff3cd',
+          border: '1px solid #ffc107',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          marginBottom: '16px',
+          color: '#856404',
+          fontSize: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {sessionExpiredMessage}
+        </div>
+      )}
+
       {/* Mostrar error general si existe */}
       {errors.general && (
         <div className="error-message general-error" style={{
@@ -169,7 +211,7 @@ const LoginForm = ({ onGoogleLogin }) => {
         disabled={loading}
         style={loading ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
       >
-        {loading ? '⏳ Iniciando sesión...' : text.submitButton}
+        {loading ? 'Iniciando sesión...' : text.submitButton}
       </button>
 
       <div className="separator">{text.separator}</div>

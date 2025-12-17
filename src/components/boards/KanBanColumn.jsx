@@ -1,4 +1,3 @@
-// src/components/boards/KanbanColumn.jsx
 import React from 'react';
 import TaskCard from './TaskCard';
 
@@ -14,7 +13,7 @@ const KanbanColumn = ({
 }) => {
   
   const handleDragOver = (e) => {
-    e.preventDefault(); // Necesario para permitir el drop
+    e.preventDefault(); 
   };
 
   const handleDrop = (e) => {
@@ -46,11 +45,7 @@ const KanbanColumn = ({
         {tasks.length === 0 ? (
           <div className="empty-column">
             <p>No hay tareas</p>
-            {onAddTask && (
-              <button onClick={onAddTask} className="add-task-btn-empty">
-                + Agregar tarea
-              </button>
-            )}
+            <p>Arrastra o crea una nueva actividad</p>
           </div>
         ) : (
           tasks.map(task => (

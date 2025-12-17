@@ -1,4 +1,3 @@
-// src/components/auth/AuthFooter.jsx
 import React from 'react';
 
 const AuthFooter = ({ text }) => {

@@ -10,19 +10,11 @@ import BoardPage from './pages/BoardPage';
 import CalendarPage from './pages/CalendarPage';
 import DashboardPage from './pages/DashboardPage';
 import Profile from './pages/Profile';
-
+import RemindersPage from './pages/RemindersPage';
 import { isAuthenticated } from './components/services/authService';
+import SessionExpiredNotification from './components/ui/SessionExpiredNotification';
+import ProtectedRoute from './components/auth/ProtectedRoute'; // ⭐ IMPORTAR EL NUEVO
 import './App.css';
-
-// ===============================
-// RUTA PROTEGIDA
-// ===============================
-const ProtectedRoute = ({ children }) => {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
 
 // ===============================
 // RUTA PÚBLICA
@@ -37,6 +29,9 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <Router>
+      {/* ⭐ NOTIFICACIÓN GLOBAL DE SESIÓN EXPIRADA */}
+      <SessionExpiredNotification />
+      
       <Routes>
         {/* ============================= */}
         {/* RUTAS PÚBLICAS */}
@@ -114,6 +109,15 @@ function App() {
           element={
             <ProtectedRoute>
               <CalendarPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/reminders"
+          element={
+            <ProtectedRoute>
+              <RemindersPage />
             </ProtectedRoute>
           }
         />

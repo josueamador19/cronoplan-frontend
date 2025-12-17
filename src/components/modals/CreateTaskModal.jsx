@@ -1,38 +1,45 @@
-// src/components/modals/CreateTaskModal.jsx
+// src/components/modals/CreateTaskModal.jsx - ACTUALIZADO
 import React, { useState, useEffect } from 'react';
-import { FaTimes } from 'react-icons/fa';
+import { FaTimes, FaBell } from 'react-icons/fa';
 import { createTask } from '../services/tasksService';
 import { getAllBoards } from '../services/boardsService';
 import '../../styles/modal.css';
 
-const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) => {
+const CreateTaskModal = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess, 
+  defaultBoardId = null,
+  defaultStatus = 'todo' // ⭐ NUEVO: Recibe el estado por defecto
+}) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     board_id: defaultBoardId,
     priority: 'Media',
-    status: 'todo',
+    status: defaultStatus, // ⭐ Usa el estado recibido
     status_badge: '',
     status_badge_color: '#9254DE',
     assignee_id: null,
-    due_date: ''
+    due_date: '',
+    due_time: '09:00',
+    create_reminder: true,
+    reminder_days_before: 1,
+    reminder_time: '09:00'
   });
+  
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingBoards, setLoadingBoards] = useState(false);
   const [error, setError] = useState('');
 
-  // Prioridades disponibles
   const priorities = ['Alta', 'Media', 'Baja'];
-
-  // Estados disponibles
   const statuses = [
     { value: 'todo', label: '📋 Por hacer' },
     { value: 'progress', label: '🔄 En progreso' },
     { value: 'done', label: '✅ Completada' }
   ];
-
-  // Badges predefinidos
+  
   const badges = [
     { name: 'Diseño', color: '#9254DE' },
     { name: 'Research', color: '#FF4D4F' },
@@ -44,19 +51,22 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
     { name: 'Deployment', color: '#722ED1' }
   ];
 
-  // Cargar boards al abrir el modal
   useEffect(() => {
-    if (isOpen) {
-      loadBoards();
-    }
+    if (isOpen) loadBoards();
   }, [isOpen]);
 
-  // Actualizar board_id si defaultBoardId cambia
+  // ⭐ Actualizar board y status cuando cambian los props
   useEffect(() => {
     if (defaultBoardId) {
       setFormData(prev => ({ ...prev, board_id: defaultBoardId }));
     }
   }, [defaultBoardId]);
+
+  useEffect(() => {
+    if (defaultStatus) {
+      setFormData(prev => ({ ...prev, status: defaultStatus }));
+    }
+  }, [defaultStatus]);
 
   const loadBoards = async () => {
     try {
@@ -71,10 +81,13 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'board_id' ? (value ? parseInt(value) : null) : value
+      [name]: type === 'checkbox' ? checked : 
+              name === 'board_id' ? (value ? parseInt(value) : null) :
+              name === 'reminder_days_before' ? parseInt(value) :
+              value
     }));
     setError('');
   };
@@ -101,7 +114,6 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
 
       console.log('📤 Creando tarea:', formData);
 
-      // Preparar datos para enviar
       const taskData = {
         ...formData,
         board_id: formData.board_id || null,
@@ -109,68 +121,72 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
         due_date: formData.due_date || null
       };
 
-      // Llamar al backend
       const newTask = await createTask(taskData);
-
       console.log('✅ Tarea creada:', newTask);
 
-      // Notificar éxito
-      if (onSuccess) {
-        onSuccess(newTask);
-      }
+      if (onSuccess) onSuccess(newTask);
 
-      // Resetear formulario
+      // Resetear el formulario
       setFormData({
         title: '',
         description: '',
         board_id: defaultBoardId,
         priority: 'Media',
-        status: 'todo',
+        status: defaultStatus, // ⭐ Resetear al estado por defecto
         status_badge: '',
         status_badge_color: '#9254DE',
         assignee_id: null,
-        due_date: ''
+        due_date: '',
+        due_time: '09:00',
+        create_reminder: true,
+        reminder_days_before: 1,
+        reminder_time: '09:00'
       });
 
-      // Cerrar modal
       onClose();
 
     } catch (error) {
-      console.error('❌ Error al crear tarea:', error);
+      console.error('❌ Error:', error);
       
       if (error.response?.data?.detail) {
         setError(error.response.data.detail);
       } else if (error.request) {
         setError('Error de conexión. Verifica que el backend esté corriendo.');
       } else {
-        setError('Error al crear la tarea. Intenta de nuevo.');
+        setError('Error al crear la tarea.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget && !loading) {
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
+  // ⭐ Obtener el label del estado actual
+  const currentStatusLabel = statuses.find(s => s.value === formData.status)?.label || '📋 Por hacer';
+
   return (
-    <div className="task-modal-overlay" onClick={handleOverlayClick}>
-      <div className="task-modal" style={{ maxWidth: '600px' }}>
-        {/* Header */}
+    <div className="task-modal-overlay" onClick={(e) => {
+      if (e.target === e.currentTarget && !loading) onClose();
+    }}>
+      <div className="task-modal" style={{ 
+        maxWidth: '650px',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        {/* Header - Fijo */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '20px 24px',
-          borderBottom: '1px solid #f0f0f0'
+          borderBottom: '1px solid #f0f0f0',
+          flexShrink: 0
         }}>
           <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
-            Crear Nueva Tarea
+            Crear Nueva Tarea {currentStatusLabel}
           </h2>
           <button
             onClick={onClose}
@@ -181,9 +197,6 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
               cursor: loading ? 'not-allowed' : 'pointer',
               padding: '8px',
               borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               color: '#999'
             }}
           >
@@ -191,10 +204,18 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
           </button>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit}>
-          <div style={{ padding: '24px' }}>
-            {/* Error message */}
+        {/* Body - Con scroll */}
+        <form onSubmit={handleSubmit} style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          flex: 1,
+          overflow: 'hidden'
+        }}>
+          <div style={{ 
+            padding: '24px',
+            overflowY: 'auto',
+            flex: 1
+          }}>
             {error && (
               <div style={{
                 backgroundColor: '#fff1f0',
@@ -234,11 +255,8 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                   border: '1px solid #d9d9d9',
                   borderRadius: '6px',
                   fontSize: '14px',
-                  outline: 'none',
-                  transition: 'all 0.3s'
+                  outline: 'none'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#1890ff'}
-                onBlur={(e) => e.target.style.borderColor = '#d9d9d9'}
               />
             </div>
 
@@ -257,9 +275,9 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Describe los detalles de la tarea..."
+                placeholder="Describe los detalles..."
                 disabled={loading}
-                rows={4}
+                rows={3}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
@@ -267,31 +285,16 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                   borderRadius: '6px',
                   fontSize: '14px',
                   outline: 'none',
-                  transition: 'all 0.3s',
                   fontFamily: 'inherit',
                   resize: 'vertical'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#1890ff'}
-                onBlur={(e) => e.target.style.borderColor = '#d9d9d9'}
               />
             </div>
 
-            {/* Tablero y Fecha en fila */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
-              gap: '16px',
-              marginBottom: '20px'
-            }}>
-              {/* Tablero */}
+            {/* Tablero y Fecha */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <div>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#333'
-                }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: '#333' }}>
                   Tablero
                 </label>
                 <select
@@ -305,9 +308,7 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                     border: '1px solid #d9d9d9',
                     borderRadius: '6px',
                     fontSize: '14px',
-                    cursor: loading || loadingBoards ? 'not-allowed' : 'pointer',
-                    backgroundColor: 'white',
-                    outline: 'none'
+                    backgroundColor: 'white'
                   }}
                 >
                   <option value="">Sin tablero</option>
@@ -319,15 +320,8 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                 </select>
               </div>
 
-              {/* Fecha límite */}
               <div>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#333'
-                }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: '#333' }}>
                   Fecha límite
                 </label>
                 <input
@@ -341,32 +335,39 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                     padding: '10px 12px',
                     border: '1px solid #d9d9d9',
                     borderRadius: '6px',
-                    fontSize: '14px',
-                    outline: 'none',
-                    transition: 'all 0.3s'
+                    fontSize: '14px'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#1890ff'}
-                  onBlur={(e) => e.target.style.borderColor = '#d9d9d9'}
                 />
               </div>
             </div>
 
-            {/* Prioridad y Estado en fila */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
-              gap: '16px',
-              marginBottom: '20px'
-            }}>
-              {/* Prioridad */}
+            {/* Hora de vencimiento */}
+            {formData.due_date && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: '#333' }}>
+                  ⏰ Hora de vencimiento
+                </label>
+                <input
+                  type="time"
+                  name="due_time"
+                  value={formData.due_time}
+                  onChange={handleChange}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Prioridad y Estado */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <div>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#333'
-                }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: '#333' }}>
                   Prioridad
                 </label>
                 <select
@@ -380,28 +381,17 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                     border: '1px solid #d9d9d9',
                     borderRadius: '6px',
                     fontSize: '14px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    backgroundColor: 'white',
-                    outline: 'none'
+                    backgroundColor: 'white'
                   }}
                 >
                   {priorities.map(priority => (
-                    <option key={priority} value={priority}>
-                      {priority}
-                    </option>
+                    <option key={priority} value={priority}>{priority}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Estado */}
               <div>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#333'
-                }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: '#333' }}>
                   Estado
                 </label>
                 <select
@@ -415,36 +405,22 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                     border: '1px solid #d9d9d9',
                     borderRadius: '6px',
                     fontSize: '14px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    backgroundColor: 'white',
-                    outline: 'none'
+                    backgroundColor: 'white'
                   }}
                 >
                   {statuses.map(status => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
+                    <option key={status.value} value={status.value}>{status.label}</option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Categoría (Badge) */}
+            {/* Categoría */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                fontSize: '14px',
-                color: '#333'
-              }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px', color: '#333' }}>
                 Categoría (opcional)
               </label>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '8px'
-              }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                 {badges.map(badge => (
                   <button
                     key={badge.name}
@@ -454,17 +430,12 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                     style={{
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      border: formData.status_badge === badge.name
-                        ? `2px solid ${badge.color}`
-                        : '1px solid #f0f0f0',
-                      backgroundColor: formData.status_badge === badge.name
-                        ? `${badge.color}15`
-                        : 'white',
+                      border: formData.status_badge === badge.name ? `2px solid ${badge.color}` : '1px solid #f0f0f0',
+                      backgroundColor: formData.status_badge === badge.name ? `${badge.color}15` : 'white',
                       color: badge.color,
                       fontSize: '12px',
                       fontWeight: '600',
                       cursor: loading ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s',
                       textAlign: 'center'
                     }}
                   >
@@ -472,32 +443,93 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                   </button>
                 ))}
               </div>
-              {formData.status_badge && (
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ 
-                    ...prev, 
-                    status_badge: '', 
-                    status_badge_color: '#9254DE' 
-                  }))}
-                  disabled={loading}
-                  style={{
-                    marginTop: '8px',
-                    padding: '4px 8px',
-                    fontSize: '12px',
-                    color: '#999',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    textDecoration: 'underline'
-                  }}
-                >
-                  Limpiar categoría
-                </button>
-              )}
             </div>
 
-            {/* Preview */}
+            {/* Sección de Recordatorio */}
+            {formData.due_date && (
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#f0f9ff',
+                borderRadius: '8px',
+                border: '1px solid #bae7ff',
+                marginBottom: '20px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '12px'
+                }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1890ff'
+                  }}>
+                    <input
+                      type="checkbox"
+                      name="create_reminder"
+                      checked={formData.create_reminder}
+                      onChange={handleChange}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <FaBell />
+                    Crear recordatorio automático
+                  </label>
+                </div>
+
+                {formData.create_reminder && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                        Días antes
+                      </label>
+                      <select
+                        name="reminder_days_before"
+                        value={formData.reminder_days_before}
+                        onChange={handleChange}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '1px solid #d9d9d9',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          backgroundColor: 'white'
+                        }}
+                      >
+                        <option value={1}>1 día antes</option>
+                        <option value={2}>2 días antes</option>
+                        <option value={3}>3 días antes</option>
+                        <option value={7}>1 semana antes</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+                        Hora
+                      </label>
+                      <input
+                        type="time"
+                        name="reminder_time"
+                        value={formData.reminder_time}
+                        onChange={handleChange}
+                        style={{
+                          width: '100%',
+                          padding: '8px',
+                          border: '1px solid #d9d9d9',
+                          borderRadius: '6px',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Vista previa */}
             <div style={{
               padding: '16px',
               backgroundColor: '#f9f9f9',
@@ -509,25 +541,15 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                 color: '#999',
                 marginBottom: '8px',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                fontWeight: '600'
               }}>
                 Vista previa
               </p>
               <div>
-                <p style={{
-                  margin: '0 0 8px 0',
-                  fontWeight: '600',
-                  fontSize: '16px',
-                  color: '#333'
-                }}>
+                <p style={{ margin: '0 0 8px 0', fontWeight: '600', fontSize: '16px', color: '#333' }}>
                   {formData.title || 'Título de la tarea'}
                 </p>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  flexWrap: 'wrap'
-                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   {formData.status_badge && (
                     <span style={{
                       padding: '4px 8px',
@@ -557,11 +579,13 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                     {formData.priority}
                   </span>
                   {formData.due_date && (
-                    <span style={{
-                      fontSize: '11px',
-                      color: '#999'
-                    }}>
-                      📅 {formData.due_date}
+                    <span style={{ fontSize: '11px', color: '#999' }}>
+                      📅 {formData.due_date} {formData.due_time && `⏰ ${formData.due_time}`}
+                    </span>
+                  )}
+                  {formData.create_reminder && formData.due_date && (
+                    <span style={{ fontSize: '11px', color: '#1890ff', fontWeight: '500' }}>
+                      🔔 Recordatorio {formData.reminder_days_before}d antes a las {formData.reminder_time}
                     </span>
                   )}
                 </div>
@@ -569,13 +593,14 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Footer - Fijo */}
           <div style={{
             padding: '16px 24px',
             borderTop: '1px solid #f0f0f0',
             display: 'flex',
             justifyContent: 'flex-end',
-            gap: '12px'
+            gap: '12px',
+            flexShrink: 0
           }}>
             <button
               type="button"
@@ -601,13 +626,9 @@ const CreateTaskModal = ({ isOpen, onClose, onSuccess, defaultBoardId = null }) 
                 padding: '8px 24px',
                 border: 'none',
                 borderRadius: '6px',
-                backgroundColor: loading || !formData.title.trim() 
-                  ? '#d9d9d9' 
-                  : '#1890ff',
+                backgroundColor: loading || !formData.title.trim() ? '#d9d9d9' : '#1890ff',
                 color: 'white',
-                cursor: loading || !formData.title.trim() 
-                  ? 'not-allowed' 
-                  : 'pointer',
+                cursor: loading || !formData.title.trim() ? 'not-allowed' : 'pointer',
                 fontSize: '14px',
                 fontWeight: '600'
               }}

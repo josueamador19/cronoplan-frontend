@@ -1,4 +1,4 @@
-// src/components/auth/GoogleButton.jsx
+
 import React from 'react';
 import { FaGoogle } from 'react-icons/fa';
 

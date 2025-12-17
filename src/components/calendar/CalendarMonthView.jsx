@@ -1,5 +1,6 @@
-// src/components/calendar/CalendarMonthView.jsx
+
 import React from 'react';
+import { parseLocalDate, isSameDay, isToday } from '../../utils/dateUtils';
 
 const CalendarMonthView = ({ tasks, currentDate, onDateClick, onTaskClick }) => {
   
@@ -35,7 +36,7 @@ const CalendarMonthView = ({ tasks, currentDate, onDateClick, onTaskClick }) => 
     }
     
     // Días del mes siguiente para completar la grilla
-    const remainingDays = 42 - days.length; // 6 semanas x 7 días
+    const remainingDays = 42 - days.length; 
     for (let i = 1; i <= remainingDays; i++) {
       days.push({
         date: new Date(year, month + 1, i),
@@ -46,28 +47,14 @@ const CalendarMonthView = ({ tasks, currentDate, onDateClick, onTaskClick }) => 
     return days;
   };
 
-  // Obtener tareas para un día específico
+  
   const getTasksForDay = (date) => {
     return tasks.filter(task => {
       if (!task.due_date) return false;
       
-      const taskDate = new Date(task.due_date);
-      return (
-        taskDate.getDate() === date.getDate() &&
-        taskDate.getMonth() === date.getMonth() &&
-        taskDate.getFullYear() === date.getFullYear()
-      );
+      const taskDate = parseLocalDate(task.due_date);
+      return isSameDay(taskDate, date);
     });
-  };
-
-  // Verificar si es hoy
-  const isToday = (date) => {
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
   };
 
   const days = getDaysInMonth(currentDate);

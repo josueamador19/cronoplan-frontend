@@ -1,5 +1,6 @@
-// src/components/calendar/CalendarWeekView.jsx
+
 import React from 'react';
+import { parseLocalDate, isSameDay, isToday } from '../../utils/dateUtils';
 
 const CalendarWeekView = ({ tasks, currentDate, onDateClick, onTaskClick }) => {
   
@@ -25,28 +26,14 @@ const CalendarWeekView = ({ tasks, currentDate, onDateClick, onTaskClick }) => {
     return days;
   };
 
-  // Obtener tareas para un día específico
   const getTasksForDay = (date) => {
     return tasks.filter(task => {
       if (!task.due_date) return false;
       
-      const taskDate = new Date(task.due_date);
-      return (
-        taskDate.getDate() === date.getDate() &&
-        taskDate.getMonth() === date.getMonth() &&
-        taskDate.getFullYear() === date.getFullYear()
-      );
+     
+      const taskDate = parseLocalDate(task.due_date);
+      return isSameDay(taskDate, date);
     });
-  };
-
-  // Verificar si es hoy
-  const isToday = (date) => {
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
   };
 
   // Generar horas del día
@@ -109,9 +96,11 @@ const CalendarWeekView = ({ tasks, currentDate, onDateClick, onTaskClick }) => {
                 
                 {/* Tareas del día */}
                 {dayTasks.map(task => {
-                  // Calcular posición vertical basada en la hora
-                  // Por simplicidad, asumimos que las tareas sin hora se muestran a las 8 AM
-                  const topPosition = 8 * 60; // 8 AM en píxeles (60px por hora)
+                  
+                  const timeStr = task.due_time || '08:00';
+                  const [hour, minute] = timeStr.split(':').map(Number);
+                  const topPosition = hour * 60 + minute; 
+                  const endHour = hour + 1;
                   
                   return (
                     <div
@@ -126,7 +115,9 @@ const CalendarWeekView = ({ tasks, currentDate, onDateClick, onTaskClick }) => {
                       }}
                       onClick={() => onTaskClick(task)}
                     >
-                      <div className="week-task-time">08:00 - 09:00</div>
+                      <div className="week-task-time">
+                        {timeStr} - {endHour.toString().padStart(2, '0')}:00
+                      </div>
                       <div className="week-task-title">{task.title}</div>
                       {task.status_badge && (
                         <div className="week-task-badge">

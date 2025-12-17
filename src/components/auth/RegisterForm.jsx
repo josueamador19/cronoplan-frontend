@@ -1,4 +1,3 @@
-// src/components/auth/RegisterForm.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InputField from '../ui/InputField';
@@ -91,14 +90,14 @@ const RegisterForm = ({ onGoogleLogin }) => {
         // Guardar token y usuario
         saveAuthData(response);
         
-        // Mostrar mensaje de éxito
-        console.log('✅ Usuario registrado exitosamente:', response.user);
+        
+        //console.log('Usuario registrado exitosamente:', response.user);
         
         // Redirigir al dashboard
         navigate('/dashboard');
         
       } catch (error) {
-        console.error('❌ Error en el registro:', error);
+        console.error('Error en el registro:', error);
         
         // Manejar errores del backend
         if (error.response?.data?.detail) {
@@ -119,7 +118,7 @@ const RegisterForm = ({ onGoogleLogin }) => {
           }
         } else if (error.request) {
           setErrors({ 
-            general: '❌ No se pudo conectar con el servidor. Verifica que tu backend esté corriendo en http://localhost:8000' 
+            general: 'No se pudo conectar con el servidor. Verifica que tu backend esté corriendo en http://localhost:8000' 
           });
         } else {
           setErrors({ general: 'Error inesperado. Intenta de nuevo.' });
@@ -214,7 +213,7 @@ const RegisterForm = ({ onGoogleLogin }) => {
         disabled={loading}
         style={loading ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
       >
-        {loading ? '⏳ Registrando...' : text.submitButton}
+        {loading ? 'Registrando...' : text.submitButton}
       </button>
 
       <div className="separator">{text.separator}</div>

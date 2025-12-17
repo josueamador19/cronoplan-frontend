@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import TopBar from '../components/layout/TopBar';
 import { getAllBoards, deleteBoard } from '../components/services/boardsService';
+import CreateBoardModal from '../components/modals/CreateBoardModal';
 import { FaTrash, FaEdit, FaPlus } from 'react-icons/fa';
 
 const BoardsListPage = () => {

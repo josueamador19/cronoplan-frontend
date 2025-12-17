@@ -1,4 +1,4 @@
-// src/components/modals/CreateBoardModal.jsx
+// src/components/modals/CreateBoardModal.jsx - CON SCROLL OPTIMIZADO
 import React, { useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { createBoard } from '../services/boardsService';
@@ -70,17 +70,14 @@ const CreateBoardModal = ({ isOpen, onClose, onSuccess }) => {
 
       console.log('📤 Creando tablero:', formData);
 
-      // Llamar al backend
       const newBoard = await createBoard(formData);
 
       console.log('✅ Tablero creado:', newBoard);
 
-      // Notificar éxito
       if (onSuccess) {
         onSuccess(newBoard);
       }
 
-      // Resetear formulario
       setFormData({
         name: '',
         color: '#1890FF',
@@ -88,7 +85,6 @@ const CreateBoardModal = ({ isOpen, onClose, onSuccess }) => {
         type: 'personal'
       });
 
-      // Cerrar modal
       onClose();
 
     } catch (error) {
@@ -116,14 +112,21 @@ const CreateBoardModal = ({ isOpen, onClose, onSuccess }) => {
 
   return (
     <div className="task-modal-overlay" onClick={handleOverlayClick}>
-      <div className="task-modal" style={{ maxWidth: '500px' }}>
-        {/* Header */}
-        <div className="create-board-header" style={{
+      <div className="task-modal" style={{ 
+        maxWidth: '550px',
+        maxHeight: '90vh',  // ✅ Altura máxima
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'  // ✅ Sin scroll en contenedor
+      }}>
+        {/* Header - Fijo */}
+        <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '20px 24px',
-          borderBottom: '1px solid #f0f0f0'
+          borderBottom: '1px solid #f0f0f0',
+          flexShrink: 0  // ✅ No se encoge
         }}>
           <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
             Crear Nuevo Tablero
@@ -147,9 +150,18 @@ const CreateBoardModal = ({ isOpen, onClose, onSuccess }) => {
           </button>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit}>
-          <div style={{ padding: '24px' }}>
+        {/* Body - Con scroll */}
+        <form onSubmit={handleSubmit} style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          flex: 1,
+          overflow: 'hidden'  // ✅ Contenedor sin scroll
+        }}>
+          <div style={{ 
+            padding: '24px',
+            overflowY: 'auto',  // ✅ Solo esta sección tiene scroll
+            flex: 1
+          }}>
             {/* Error message */}
             {error && (
               <div style={{
@@ -329,7 +341,8 @@ const CreateBoardModal = ({ isOpen, onClose, onSuccess }) => {
                 color: '#999',
                 marginBottom: '8px',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
+                fontWeight: '600'
               }}>
                 Vista previa
               </p>
@@ -366,13 +379,14 @@ const CreateBoardModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Footer - Fijo */}
           <div style={{
             padding: '16px 24px',
             borderTop: '1px solid #f0f0f0',
             display: 'flex',
             justifyContent: 'flex-end',
-            gap: '12px'
+            gap: '12px',
+            flexShrink: 0  // ✅ No se encoge
           }}>
             <button
               type="button"

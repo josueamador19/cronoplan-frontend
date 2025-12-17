@@ -1,4 +1,4 @@
-// src/services/tasksService.js
+// src/services/tasksService.js - CORREGIDO
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -89,8 +89,15 @@ export const createTask = async (taskData) => {
       status_badge: taskData.status_badge || null,
       status_badge_color: taskData.status_badge_color || '#9254DE',
       assignee_id: taskData.assignee_id || null,
-      due_date: taskData.due_date || null
+      due_date: taskData.due_date || null,
+      due_time: taskData.due_time || '09:00',  // ⭐ NUEVO
+      // Incluir campos de recordatorio
+      create_reminder: taskData.create_reminder !== undefined ? taskData.create_reminder : true,
+      reminder_days_before: taskData.reminder_days_before || 1,
+      reminder_time: taskData.reminder_time || '09:00'
     };
+    
+    console.log('📤 Payload enviado al backend:', payload);
     
     const response = await tasksAPI.post('/', payload);
     return response.data;
@@ -143,16 +150,22 @@ export const deleteTask = async (taskId) => {
 
 /**
  * Helper: Formatear fecha para el backend
+ * Mantiene la fecha en formato local sin conversión de zona horaria
  */
 export const formatDateForBackend = (date) => {
   if (!date) return null;
   
   if (typeof date === 'string') {
+    // Si ya es string en formato YYYY-MM-DD, devolverlo tal cual
     return date;
   }
   
   if (date instanceof Date) {
-    return date.toISOString().split('T')[0]; // YYYY-MM-DD
+    // Formatear en zona horaria local (sin conversión a UTC)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
   
   return null;
@@ -164,7 +177,10 @@ export const formatDateForBackend = (date) => {
 export const formatDateForFrontend = (dateString) => {
   if (!dateString) return null;
   
-  const date = new Date(dateString);
+  // Crear fecha sin conversión de zona horaria
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  
   const options = { day: 'numeric', month: 'short', year: 'numeric' };
   return date.toLocaleDateString('es-ES', options);
 };

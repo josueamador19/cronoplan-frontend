@@ -1,4 +1,4 @@
-// src/components/layout/Footer.jsx
+
 import React from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import { FaTwitter, FaLinkedin, FaGithub } from 'react-icons/fa';

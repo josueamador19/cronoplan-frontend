@@ -1,4 +1,4 @@
-// src/components/boards/TaskCard.jsx
+
 import React from 'react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import PriorityBadge from '../tasks/PriorityBadge';
@@ -14,7 +14,6 @@ const TaskCard = ({ task, onClick, onDragStart, draggable = true }) => {
   };
 
   const handleClick = (e) => {
-    // Solo activar onClick si no estamos arrastrando
     if (onClick && !e.defaultPrevented) {
       onClick(task);
     }

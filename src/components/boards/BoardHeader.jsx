@@ -1,4 +1,3 @@
-// src/components/boards/BoardHeader.jsx
 import React from 'react';
 import { FaLock, FaList, FaThLarge, FaFilter } from 'react-icons/fa';
 import Button from '../ui/Button';

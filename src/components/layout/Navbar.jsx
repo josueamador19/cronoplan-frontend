@@ -1,4 +1,3 @@
-// src/components/layout/Navbar.jsx
 import React from 'react';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 import { navLinks } from '../../constants/data';

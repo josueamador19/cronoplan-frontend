@@ -207,26 +207,6 @@ const CalendarPage = () => {
           </div>
 
           <div className="calendar-controls-right">
-            {/* Filtros */}
-            <div className="calendar-filters">
-              <label className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={showRemindersOnly}
-                  onChange={(e) => setShowRemindersOnly(e.target.checked)}
-                />
-                <span>Mostrar recordatorios</span>
-              </label>
-              
-              <label className="filter-checkbox">
-                <input
-                  type="checkbox"
-                  checked={showTasksOnly}
-                  onChange={(e) => setShowTasksOnly(e.target.checked)}
-                />
-                <span>Solo mis tareas</span>
-              </label>
-            </div>
 
             {/* Vista selector */}
             <div className="view-selector">

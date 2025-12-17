@@ -1,4 +1,4 @@
-// src/components/auth/AuthHeader.jsx
+
 import React from 'react';
 import { FaClock } from 'react-icons/fa';
 

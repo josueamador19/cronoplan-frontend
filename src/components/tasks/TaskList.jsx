@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { FaList, FaThLarge, FaSortAmountDown } from 'react-icons/fa';
 import TaskRow from './TaskRow';
 import TaskFilters from './TaskFilters';
+import '../../styles/TaskList.css';
 
 const TaskList = ({ tasks = [], filters = [], onFilterRemove, onClearFilters }) => {
   const [activeView, setActiveView] = useState('list');
@@ -27,26 +28,7 @@ const TaskList = ({ tasks = [], filters = [], onFilterRemove, onClearFilters }) 
         <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700' }}>
           Tareas
         </h3>
-        <div className="view-tabs">
-          <button 
-            className={`view-tab ${activeView === 'list' ? 'active' : ''}`}
-            onClick={() => setActiveView('list')}
-          >
-            <FaList /> Lista
-          </button>
-          <button 
-            className={`view-tab ${activeView === 'board' ? 'active' : ''}`}
-            onClick={() => setActiveView('board')}
-          >
-            <FaThLarge /> Tablero
-          </button>
-          <button 
-            className={`view-tab ${activeView === 'sort' ? 'active' : ''}`}
-            onClick={() => setActiveView('sort')}
-          >
-            <FaSortAmountDown /> Ordenar
-          </button>
-        </div>
+        
       </div>
 
       <table className="task-table">

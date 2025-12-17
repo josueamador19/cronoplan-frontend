@@ -1,10 +1,11 @@
-// src/pages/DashboardPage.jsx
+// src/pages/DashboardPage.jsx - CON MODAL DE CREAR TAREA
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import TopBar from '../components/layout/TopBar';
 import KanbanBoard from '../components/boards/KanbanBoard';
 import TaskList from '../components/tasks/TaskList';
+import CreateTaskModal from '../components/modals/CreateTaskModal';
 import { getAllBoards } from '../components/services/boardsService';
 import { getAllTasks } from '../components/services/tasksService';
 import { getStoredUser } from '../components/services/authService';
@@ -18,7 +19,22 @@ const DashboardPage = () => {
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState('kanban'); // 'kanban' o 'list'
+  const [activeView, setActiveView] = useState('kanban');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  // ⭐ Estados para el modal de crear tarea
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [taskModalDefaultStatus, setTaskModalDefaultStatus] = useState('todo');
+
+  // Detectar cambios de tamaño de ventana
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -30,7 +46,6 @@ const DashboardPage = () => {
       setLoading(true);
       setError(null);
 
-      // Cargar boards y tasks en paralelo
       const [boardsData, tasksData] = await Promise.all([
         getAllBoards(),
         getAllTasks()
@@ -39,18 +54,17 @@ const DashboardPage = () => {
       setBoards(boardsData);
       setTasks(tasksData.tasks || tasksData);
 
-      // Si hay boards, seleccionar el primero por defecto
       if (boardsData.length > 0 && !selectedBoard) {
         setSelectedBoard(boardsData[0].id);
       }
 
-      console.log('✅ Datos cargados:', { 
+      console.log('Datos cargados:', { 
         boards: boardsData.length, 
         tasks: tasksData.tasks?.length || tasksData.length 
       });
 
     } catch (error) {
-      console.error('❌ Error al cargar dashboard:', error);
+      console.error('Error al cargar dashboard:', error);
       
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
@@ -64,40 +78,37 @@ const DashboardPage = () => {
     }
   };
 
-  // ⭐ Callback cuando se crea un board
   const handleBoardCreated = async (newBoard) => {
-    console.log('🎉 Nuevo board creado:', newBoard);
-    
-    // Recargar boards
+    console.log('Nuevo board creado:', newBoard);
     const updatedBoards = await getAllBoards();
     setBoards(updatedBoards);
-    
-    // Opcional: Seleccionar el nuevo board
     setSelectedBoard(newBoard.id);
-    
-    // Opcional: Mostrar notificación
-    // toast.success('¡Tablero creado exitosamente!');
   };
 
-  // ⭐ Callback cuando se crea una tarea
   const handleTaskCreated = async (newTask) => {
-    console.log('🎉 Nueva tarea creada:', newTask);
-    
-    // Recargar tareas
-    const tasksData = await getAllTasks();
-    setTasks(tasksData.tasks || tasksData);
-    
-    // Opcional: Mostrar notificación
-    // toast.success('¡Tarea creada exitosamente!');
+    console.log('✅ Nueva tarea creada desde modal:', newTask);
+    // Recargar todas las tareas
+    await loadDashboardData();
+    // Cerrar el modal
+    setIsTaskModalOpen(false);
   };
 
   const handleBoardSelect = (boardId) => {
     setSelectedBoard(boardId);
   };
 
-  const handleAddTask = (columnId) => {
-    alert('Modal para crear tarea - Próximamente');
-    // TODO: Abrir modal para crear tarea
+  // ⭐ Función para abrir el modal de crear tarea
+  // columnId puede ser: 'todo', 'progress', 'done'
+  const handleAddTask = (columnId = 'todo') => {
+    console.log('🎯 Abriendo modal para crear tarea en columna:', columnId);
+    setTaskModalDefaultStatus(columnId);
+    setIsTaskModalOpen(true);
+  };
+
+  // ⭐ Función para cerrar el modal
+  const handleCloseTaskModal = () => {
+    setIsTaskModalOpen(false);
+    setTaskModalDefaultStatus('todo');
   };
 
   const handleTaskClick = (task) => {
@@ -120,7 +131,7 @@ const DashboardPage = () => {
     dueDate: formatDate(task.due_date),
     board: task.board || 'Sin tablero',
     boardId: task.board_id,
-    column: task.status, // todo, progress, done
+    column: task.status,
     completed: task.completed,
     assignee: task.assignee || { 
       name: 'Sin asignar', 
@@ -128,10 +139,8 @@ const DashboardPage = () => {
     }
   }));
 
-  // Helper para formatear fecha
   function formatDate(dateString) {
     if (!dateString) return 'Sin fecha';
-    
     const date = new Date(dateString);
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
     return date.toLocaleDateString('es-ES', options);
@@ -149,22 +158,8 @@ const DashboardPage = () => {
   if (loading) {
     return (
       <DashboardLayout activeItem="inicio">
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '400px',
-          flexDirection: 'column',
-          gap: '20px'
-        }}>
-          <div className="spinner" style={{
-            width: '50px',
-            height: '50px',
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #1890ff',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
+        <div className="dashboard-loading">
+          <div className="spinner"></div>
           <p>Cargando dashboard...</p>
         </div>
       </DashboardLayout>
@@ -174,24 +169,9 @@ const DashboardPage = () => {
   if (error) {
     return (
       <DashboardLayout activeItem="inicio">
-        <div style={{ 
-          padding: '40px', 
-          textAlign: 'center',
-          color: '#ff4d4f'
-        }}>
+        <div className="dashboard-error">
           <h3>⚠️ {error}</h3>
-          <button 
-            onClick={loadDashboardData}
-            style={{
-              marginTop: '20px',
-              padding: '10px 24px',
-              backgroundColor: '#1890ff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={loadDashboardData}>
             Reintentar
           </button>
         </div>
@@ -201,22 +181,15 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout activeItem="inicio">
-      {/* TopBar con callbacks */}
       <TopBar 
-        title={`¡Bienvenido, ${user?.full_name || 'Usuario'}! 👋`}
+        title={`¡Bienvenido, ${user?.full_name || 'Usuario'}!`}
         subtitle="Aquí está un resumen de tu productividad"
         onTaskCreated={handleTaskCreated}
         onBoardCreated={handleBoardCreated}
       />
 
       {/* Estadísticas */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '20px',
-        padding: '0 20px 20px',
-        marginBottom: '20px'
-      }}>
+      <div className="dashboard-stats">
         <StatCard
           icon="📊"
           title="Tableros"
@@ -229,129 +202,75 @@ const DashboardPage = () => {
           title="Tareas Totales"
           value={stats.totalTasks}
           color="#52c41a"
+          onClick={() => navigate('/dashboard/tasks')}
         />
         <StatCard
           icon="⏳"
           title="Pendientes"
           value={stats.pendingTasks}
           color="#faad14"
+          onClick={() => navigate('/dashboard/reminders')}
         />
         <StatCard
           icon="🔥"
           title="Alta Prioridad"
           value={stats.highPriority}
           color="#ff4d4f"
+          onClick={() => navigate('/dashboard/tasks?priority=Alta')}
         />
       </div>
 
-      {/* Controles de vista */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0 20px 20px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
+      {/* Controles de vista RESPONSIVE */}
+      <div className="dashboard-controls">
+        <div className="dashboard-controls-left">
+          <h2 className={isMobile ? 'hide-mobile' : ''}>
             {selectedBoard 
-              ? `Tablero: ${boards.find(b => b.id === selectedBoard)?.name}`
+              ? boards.find(b => b.id === selectedBoard)?.name
               : 'Todas las tareas'}
           </h2>
-          <select 
-            value={selectedBoard || ''} 
-            onChange={(e) => handleBoardSelect(Number(e.target.value) || null)}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid #d9d9d9',
-              borderRadius: '6px',
-              fontSize: '14px',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="">Todos los tableros</option>
-            {boards.map(board => (
-              <option key={board.id} value={board.id}>
-                {board.icon} {board.name} ({board.task_count || 0})
-              </option>
-            ))}
-          </select>
+          <div className="board-selector">
+            <select 
+              value={selectedBoard || ''} 
+              onChange={(e) => handleBoardSelect(Number(e.target.value) || null)}
+            >
+              <option value="">Todos los tableros</option>
+              {boards.map(board => (
+                <option key={board.id} value={board.id}>
+                  {board.icon} {board.name} ({board.task_count || 0})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            className={`view-tab ${activeView === 'kanban' ? 'active' : ''}`}
-            onClick={() => setActiveView('kanban')}
-            style={{
-              padding: '8px 16px',
-              border: activeView === 'kanban' ? 'none' : '1px solid #d9d9d9',
-              background: activeView === 'kanban' ? '#1890ff' : 'white',
-              color: activeView === 'kanban' ? 'white' : '#666',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
-          >
-            📊 Kanban
-          </button>
-          <button 
-            className={`view-tab ${activeView === 'list' ? 'active' : ''}`}
-            onClick={() => setActiveView('list')}
-            style={{
-              padding: '8px 16px',
-              border: activeView === 'list' ? 'none' : '1px solid #d9d9d9',
-              background: activeView === 'list' ? '#1890ff' : 'white',
-              color: activeView === 'list' ? 'white' : '#666',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
-          >
-            📋 Lista
-          </button>
+        <div className="dashboard-controls-right">
+          <div className="view-toggle">
+            <button 
+              className={activeView === 'kanban' ? 'active' : ''}
+              onClick={() => setActiveView('kanban')}
+            >
+              <span className="hide-mobile">📊</span> Kanban
+            </button>
+            <button 
+              className={activeView === 'list' ? 'active' : ''}
+              onClick={() => setActiveView('list')}
+            >
+              <span className="hide-mobile">📋</span> Lista
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Contenido */}
-      <div style={{ padding: '0 20px 20px' }}>
+      <div className="dashboard-content">
         {transformedTasks.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '80px 20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-          }}>
-            <div style={{ fontSize: '64px', marginBottom: '20px' }}>📋</div>
-            <h3 style={{ fontSize: '24px', color: '#333', marginBottom: '12px' }}>
-              No tienes tareas aún
-            </h3>
-            <p style={{ color: '#999', marginBottom: '24px' }}>
-              Crea tu primera tarea para comenzar
-            </p>
-            <button 
-              onClick={() => handleAddTask('todo')}
-              style={{
-                padding: '12px 32px',
-                backgroundColor: '#1890ff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: '600'
-              }}
-            >
-              + Crear primera tarea
-            </button>
-          </div>
+          <EmptyState onAddTask={() => handleAddTask('todo')} />
         ) : (
           <>
             {activeView === 'kanban' ? (
               <KanbanBoard
                 tasks={transformedTasks}
-                onAddTask={handleAddTask}
+                onAddTask={handleAddTask} // ⭐ Pasa la función al KanbanBoard
                 onTaskClick={handleTaskClick}
                 onTaskUpdate={loadDashboardData}
               />
@@ -366,57 +285,48 @@ const DashboardPage = () => {
           </>
         )}
       </div>
+
+      {/* ⭐ Modal de Crear Tarea */}
+      <CreateTaskModal
+        isOpen={isTaskModalOpen}
+        onClose={handleCloseTaskModal}
+        onSuccess={handleTaskCreated}
+        defaultBoardId={selectedBoard}
+        defaultStatus={taskModalDefaultStatus}
+      />
     </DashboardLayout>
   );
 };
 
-// Componente para tarjetas de estadísticas
+// Componente StatCard RESPONSIVE
 const StatCard = ({ icon, title, value, color, onClick }) => (
   <div 
+    className="stat-card"
     onClick={onClick}
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-      padding: '20px',
-      background: 'white',
-      borderRadius: '12px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-      cursor: onClick ? 'pointer' : 'default',
-      transition: 'all 0.2s'
-    }}
-    onMouseEnter={(e) => {
-      if (onClick) {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
-      }
-    }}
-    onMouseLeave={(e) => {
-      if (onClick) {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-      }
-    }}
+    style={{ cursor: onClick ? 'pointer' : 'default' }}
   >
-    <span style={{ fontSize: '32px' }}>{icon}</span>
+    <span className="stat-icon">{icon}</span>
     <div>
-      <p style={{ 
-        fontSize: '28px', 
-        fontWeight: 'bold', 
-        color: color, 
-        margin: 0 
-      }}>
+      <p className="stat-value" style={{ color }}>
         {value}
       </p>
-      <p style={{ 
-        fontSize: '14px', 
-        color: '#999', 
-        margin: 0 
-      }}>
+      <p className="stat-label">
         {title}
       </p>
     </div>
   </div>
 );
 
-export default DashboardPage;
+// Componente EmptyState
+const EmptyState = ({ onAddTask }) => (
+  <div className="empty-state">
+    <div style={{ fontSize: '64px', marginBottom: '20px' }}>📋</div>
+    <h3>No tienes tareas aún</h3>
+    <p>Crea tu primera tarea para comenzar</p>
+    <button className="primary-btn" onClick={onAddTask}>
+      + Crear primera tarea
+    </button>
+  </div>
+);
+
+export default DashboardPage

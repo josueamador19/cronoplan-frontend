@@ -18,7 +18,17 @@ const TaskRow = ({ task, onCheck, onEdit }) => {
       <td>
         <div className="task-title-cell">
           <span className="task-title">{task.title}</span>
-          <StatusBadge status={task.status} color={task.statusColor} />
+          <div className="mobile-task-info">
+            <StatusBadge status={task.status} color={task.statusColor} />
+            <PriorityBadge priority={task.priority} />
+            <div className="task-date">
+              <FaCalendarAlt />
+              <span>{task.dueDate}</span>
+            </div>
+            <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+              {task.board}
+            </span>
+          </div>
         </div>
       </td>
       <td>

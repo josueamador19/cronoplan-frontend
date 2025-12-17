@@ -1,4 +1,4 @@
-// src/components/layout/Sidebar.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaClock, FaPlus } from 'react-icons/fa';
@@ -23,10 +23,9 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
       setLoadingBoards(true);
       const boardsData = await getAllBoards();
       setBoards(boardsData);
-      console.log('✅ Boards cargados en sidebar:', boardsData.length);
+      console.log('Boards cargados en sidebar:', boardsData.length);
     } catch (error) {
-      console.error('❌ Error al cargar boards en sidebar:', error);
-      // Si falla, no hacer nada (el usuario puede seguir navegando)
+      console.error('Error al cargar boards en sidebar:', error);
     } finally {
       setLoadingBoards(false);
     }
@@ -54,7 +53,7 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
 
   // Manejar éxito al crear tablero
   const handleBoardCreated = async (newBoard) => {
-    console.log('✅ Tablero creado exitosamente:', newBoard);
+    //console.log('Tablero creado exitosamente:', newBoard);
     
     // Recargar la lista de boards
     await loadBoards();
@@ -89,6 +88,7 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
 
   return (
     <>
+      
       <div className="sidebar">
         {/* Logo */}
         <div className="sidebar-logo" onClick={() => handleNavigate('/dashboard')}>
@@ -98,17 +98,7 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
           <span>CronoPlan</span>
         </div>
 
-        {/* Búsqueda */}
-        <input 
-          type="text" 
-          className="sidebar-search" 
-          placeholder="Buscar..."
-          onFocus={(e) => {
-            // TODO: Implementar búsqueda
-            e.target.blur();
-            alert('Funcionalidad de búsqueda - Próximamente');
-          }}
-        />
+        
 
         {/* Menú principal */}
         <ul className="sidebar-menu">
@@ -188,12 +178,14 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
         </button>
       </div>
 
-      {/* Modal para crear tablero */}
-      <CreateBoardModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSuccess={handleBoardCreated}
-      />
+      {/* ⭐ MODAL - Fuera del sidebar, se renderiza a nivel raíz */}
+      {isModalOpen && (
+        <CreateBoardModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSuccess={handleBoardCreated}
+        />
+      )}
     </>
   );
 };

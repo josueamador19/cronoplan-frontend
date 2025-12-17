@@ -57,18 +57,15 @@ const handleEditProfile = () => {
           {showActions && (
             <>
               <Button variant="outline" size="sm" onClick={() => setIsBoardModalOpen(true)}>
-                📊 Crear Tablero
+                Crear Tablero
               </Button>
               <Button variant="primary" size="sm" onClick={() => setIsTaskModalOpen(true)}>
-                ➕ Crear Actividad
+                Crear Actividad
               </Button>
             </>
           )}
 
-          <div className="notification-icon">
-            <FaBell />
-            <span className="notification-badge">3</span>
-          </div>
+          
 
           {/* AVATAR + MENU */}
           <div className="user-menu" ref={menuRef}>

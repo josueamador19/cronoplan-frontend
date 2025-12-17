@@ -1,4 +1,4 @@
-// src/components/boards/KanbanBoard.jsx
+
 import React, { useState } from 'react';
 import KanbanColumn from './KanbanColumn';
 import { kanbanColumns } from '../../constants/dashboardData';
@@ -31,12 +31,12 @@ const KanbanBoard = ({ tasks = [], onAddTask, onTaskClick, onTaskUpdate }) => {
     }
 
     try {
-      console.log(`🔄 Moviendo tarea ${draggingTask.id} a columna ${columnId}`);
+      //console.log(`Moviendo tarea ${draggingTask.id} a columna ${columnId}`);
       
       // Actualizar en el backend
       await updateTaskStatus(draggingTask.id, columnId);
       
-      console.log('✅ Tarea movida exitosamente');
+      
       
       // Notificar al componente padre para que recargue los datos
       if (onTaskUpdate) {
@@ -44,7 +44,7 @@ const KanbanBoard = ({ tasks = [], onAddTask, onTaskClick, onTaskUpdate }) => {
       }
       
     } catch (error) {
-      console.error('❌ Error al mover tarea:', error);
+      console.error('Error al mover tarea:', error);
       alert('Error al mover la tarea. Intenta de nuevo.');
     } finally {
       setDraggingTask(null);

@@ -1,4 +1,4 @@
-// src/components/auth/AuthTabs.jsx
+
 import React from 'react';
 
 const AuthTabs = ({ activeTab, onTabChange }) => {

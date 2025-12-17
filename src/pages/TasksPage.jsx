@@ -27,7 +27,7 @@ const TasksPage = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Cargando datos desde el backend...');
+      console.log('Cargando datos desde el backend...');
 
       // Cargar boards y tasks en paralelo
       const [boardsData, tasksData] = await Promise.all([
@@ -39,13 +39,13 @@ const TasksPage = () => {
       const tasksList = tasksData.tasks || tasksData;
       setTasks(tasksList);
 
-      console.log('✅ Datos cargados exitosamente:', {
+      console.log('Datos cargados exitosamente:', {
         boards: boardsData.length,
         tasks: tasksList.length
       });
 
     } catch (error) {
-      console.error('❌ Error al cargar datos:', error);
+      console.error('Error al cargar datos:', error);
       
       // Si es error 401, redirigir al login
       if (error.response?.status === 401) {
@@ -183,7 +183,7 @@ const TasksPage = () => {
           textAlign: 'center',
           color: '#ff4d4f'
         }}>
-          <h3>⚠️ {error}</h3>
+          <h3>{error}</h3>
           <button 
             onClick={loadData}
             style={{
@@ -213,18 +213,7 @@ const TasksPage = () => {
         onBoardCreated={handleBoardCreated}
       />
       
-      {/* Mostrar info de debug en desarrollo */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{ 
-          padding: '10px 20px', 
-          background: '#e6f7ff', 
-          borderLeft: '4px solid #1890ff',
-          margin: '0 20px 20px',
-          fontSize: '14px'
-        }}>
-          ℹ️ <strong>Datos del backend:</strong> {tasks.length} tareas cargadas, {boards.length} tableros
-        </div>
-      )}
+      
       
       {filteredTasks.length === 0 && tasks.length === 0 ? (
         <div style={{ 
