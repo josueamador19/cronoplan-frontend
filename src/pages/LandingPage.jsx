@@ -7,10 +7,11 @@ import FeaturesSection from '../components/sections/FeaturesSection';
 import HowItWorksSection from '../components/sections/HowItWorksSection';
 import ViewsSection from '../components/sections/ViewsSection';
 import CTASection from '../components/sections/CTASection';
-
+import Snowfall from 'react-snowfall';
 const LandingPage = () => {
   return (
     <div>
+      
       <NavigationBar />
       <HeroSection />
       <FeaturesSection />
@@ -18,6 +19,7 @@ const LandingPage = () => {
       <ViewsSection />
       <CTASection />
       <Footer />
+      <Snowfall color="#82C3D9"/>
     </div>
   );
 };
