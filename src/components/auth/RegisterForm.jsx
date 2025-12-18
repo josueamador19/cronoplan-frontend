@@ -4,7 +4,7 @@ import InputField from '../ui/InputField';
 import PasswordInput from '../ui/PasswordInput';
 import GoogleButton from './GoogleButton';
 import AuthFooter from './AuthFooter';
-import { authTexts } from '../../constants/authData';
+import { authTexts } from '../../constants/authdata';
 import { registerUser, saveAuthData } from '../services/authService';
 
 const RegisterForm = ({ onGoogleLogin }) => {
