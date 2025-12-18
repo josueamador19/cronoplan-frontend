@@ -5,7 +5,7 @@ import AuthHeader from '../components/auth/AuthHeader';
 import AuthTabs from '../components/auth/AuthTabs';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
-import { authTexts } from '../constants/authData';
+import { authTexts } from '../constants/authdata';
 
 const LoginPage = () => {
   const [activeTab, setActiveTab] = useState('login');
