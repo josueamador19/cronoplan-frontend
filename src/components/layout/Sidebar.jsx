@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaClock, FaPlus } from 'react-icons/fa';
 import { menuItems } from '../../constants/dashboardData';
@@ -23,7 +23,7 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
       setLoadingBoards(true);
       const boardsData = await getAllBoards();
       setBoards(boardsData);
-      console.log('Boards cargados en sidebar:', boardsData.length);
+      //console.log('Boards cargados en sidebar:', boardsData.length);
     } catch (error) {
       console.error('Error al cargar boards en sidebar:', error);
     } finally {
@@ -42,7 +42,8 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
   };
 
   // Manejar crear nuevo tablero
-  const handleCreateBoard = () => {
+  const handleCreateBoard = (e) => {
+    e.stopPropagation(); // Evitar propagación del evento
     setIsModalOpen(true);
   };
 
@@ -88,7 +89,6 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
 
   return (
     <>
-      
       <div className="sidebar">
         {/* Logo */}
         <div className="sidebar-logo" onClick={() => handleNavigate('/dashboard')}>
@@ -97,8 +97,6 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
           </div>
           <span>CronoPlan</span>
         </div>
-
-        
 
         {/* Menú principal */}
         <ul className="sidebar-menu">
@@ -178,13 +176,14 @@ const Sidebar = ({ activeItem = 'inicio', activeBoard = null }) => {
         </button>
       </div>
 
-      {/* ⭐ MODAL - Fuera del sidebar, se renderiza a nivel raíz */}
-      {isModalOpen && (
+      
+      {isModalOpen && createPortal(
         <CreateBoardModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           onSuccess={handleBoardCreated}
-        />
+        />,
+        document.body 
       )}
     </>
   );

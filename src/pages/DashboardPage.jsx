@@ -22,7 +22,7 @@ const DashboardPage = () => {
   const [activeView, setActiveView] = useState('kanban');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
-  // ⭐ Estados para el modal de crear tarea
+
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskModalDefaultStatus, setTaskModalDefaultStatus] = useState('todo');
 
@@ -58,11 +58,13 @@ const DashboardPage = () => {
         setSelectedBoard(boardsData[0].id);
       }
 
-      console.log('Datos cargados:', { 
+      {/**
+        console.log('Datos cargados:', { 
         boards: boardsData.length, 
         tasks: tasksData.tasks?.length || tasksData.length 
       });
 
+        */}
     } catch (error) {
       console.error('Error al cargar dashboard:', error);
       
@@ -86,7 +88,7 @@ const DashboardPage = () => {
   };
 
   const handleTaskCreated = async (newTask) => {
-    console.log('✅ Nueva tarea creada desde modal:', newTask);
+    console.log('Nueva tarea creada desde modal:', newTask);
     // Recargar todas las tareas
     await loadDashboardData();
     // Cerrar el modal
@@ -97,15 +99,14 @@ const DashboardPage = () => {
     setSelectedBoard(boardId);
   };
 
-  // ⭐ Función para abrir el modal de crear tarea
-  // columnId puede ser: 'todo', 'progress', 'done'
+
   const handleAddTask = (columnId = 'todo') => {
-    console.log('🎯 Abriendo modal para crear tarea en columna:', columnId);
+    console.log('Abriendo modal para crear tarea en columna:', columnId);
     setTaskModalDefaultStatus(columnId);
     setIsTaskModalOpen(true);
   };
 
-  // ⭐ Función para cerrar el modal
+  
   const handleCloseTaskModal = () => {
     setIsTaskModalOpen(false);
     setTaskModalDefaultStatus('todo');

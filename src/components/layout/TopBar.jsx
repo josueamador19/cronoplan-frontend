@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaBell, FaUserEdit, FaSignOutAlt } from 'react-icons/fa';
+import { FaUserEdit, FaSignOutAlt } from 'react-icons/fa';
 import Button from '../ui/Button';
 import CreateBoardModal from '../modals/CreateBoardModal';
 import CreateTaskModal from '../modals/CreateTaskModal';
 import { logoutUser, getStoredUser } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
-
 
 const TopBar = ({
   title,
@@ -20,6 +19,8 @@ const TopBar = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const menuRef = useRef(null);
+  const navigate = useNavigate();
+  const [user, setUser] = useState(getStoredUser());
 
   // Cerrar menú al hacer click fuera
   useEffect(() => {
@@ -32,18 +33,37 @@ const TopBar = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navigate = useNavigate();
-const user = getStoredUser();
+  // Actualizar usuario cuando cambie el localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setUser(getStoredUser());
+    };
 
-const handleLogout = async () => {
-  await logoutUser();
-  navigate('/');
-};
+    // Escuchar cambios en localStorage
+    window.addEventListener('storage', handleStorageChange);
+    
+    // También escuchar un evento personalizado para cambios en la misma pestaña
+    window.addEventListener('userUpdated', handleStorageChange);
 
-const handleEditProfile = () => {
-  navigate('/dashboard/profile');
-};
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userUpdated', handleStorageChange);
+    };
+  }, []);
 
+  const handleLogout = async () => {
+    setIsMenuOpen(false);
+    await logoutUser();
+    navigate('/');
+  };
+
+  const handleEditProfile = () => {
+    setIsMenuOpen(false);
+    navigate('/dashboard/profile');
+  };
+
+  // Obtener avatar del usuario o usar uno por defecto
+  const userAvatar = user?.avatar_url || "https://i.pravatar.cc/150?img=12";
 
   return (
     <>
@@ -65,12 +85,10 @@ const handleEditProfile = () => {
             </>
           )}
 
-          
-
-          {/* AVATAR + MENU */}
+          {/* AVATAR + MENU SIMPLE */}
           <div className="user-menu" ref={menuRef}>
             <img
-              src="https://i.pravatar.cc/150?img=12"
+              src={userAvatar}
               alt="Usuario"
               className="user-avatar"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -78,13 +96,13 @@ const handleEditProfile = () => {
 
             {isMenuOpen && (
               <div className="user-dropdown">
-                <button onClick={handleEditProfile}>
+                <button className="dropdown-item" onClick={handleEditProfile}>
                   <FaUserEdit />
-                  Editar perfil
+                  <span>Editar perfil</span>
                 </button>
-                <button className="logout" onClick={handleLogout}>
+                <button className="dropdown-item logout" onClick={handleLogout}>
                   <FaSignOutAlt />
-                  Cerrar sesión
+                  <span>Cerrar sesión</span>
                 </button>
               </div>
             )}

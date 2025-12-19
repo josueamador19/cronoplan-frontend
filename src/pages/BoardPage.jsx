@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import BoardHeader from '../components/boards/BoardHeader';
 import KanbanBoard from '../components/boards/KanbanBoard';
+import CreateTaskModal from '../components/modals/CreateTaskModal';
 import { getBoardById } from '../components/services/boardsService';
 import { getTasksByBoard, updateTaskStatus } from '../components/services/tasksService';
 
@@ -15,6 +16,10 @@ const BoardPage = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // ⭐ Estados para el modal
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedColumn, setSelectedColumn] = useState('todo');
 
   // Cargar board y tareas
   useEffect(() => {
@@ -37,13 +42,15 @@ const BoardPage = () => {
       setBoard(boardData);
       setTasks(tasksData);
 
-      console.log('✅ Board cargado:', {
+      {/**
+        console.log('Board cargado:', {
         board: boardData.name,
         tasks: tasksData.length
       });
+        */}
 
     } catch (error) {
-      console.error('❌ Error al cargar board:', error);
+      console.error('Error al cargar board:', error);
       
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
@@ -85,10 +92,19 @@ const BoardPage = () => {
     return date.toLocaleDateString('es-ES', options);
   }
 
+  // Abrir modal para crear tarea
   const handleAddTask = (columnId) => {
-    console.log('Crear tarea en columna:', columnId);
-    alert(`Crear tarea en columna ${columnId} - Próximamente`);
-    // TODO: Abrir modal para crear tarea
+    //console.log('Crear tarea en columna:', columnId);
+    setSelectedColumn(columnId);
+    setIsTaskModalOpen(true);
+  };
+
+  // ⭐ Manejar éxito al crear tarea
+  const handleTaskCreated = async (newTask) => {
+    //console.log('Tarea creada:', newTask);
+    setIsTaskModalOpen(false);
+    // Recargar datos del board
+    await loadBoardData();
   };
 
   const handleTaskClick = (task) => {
@@ -124,7 +140,7 @@ const BoardPage = () => {
     return (
       <DashboardLayout activeItem="tableros">
         <div style={{ padding: '40px', textAlign: 'center', color: '#ff4d4f' }}>
-          <h3>⚠️ {error}</h3>
+          <h3>{error}</h3>
           <button 
             onClick={() => navigate('/dashboard')}
             style={{
@@ -197,6 +213,15 @@ const BoardPage = () => {
           />
         )}
       </div>
+
+      {/* MODAL PARA CREAR TAREA */}
+      <CreateTaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onSuccess={handleTaskCreated}
+        defaultBoardId={id}
+        defaultStatus={selectedColumn}
+      />
     </DashboardLayout>
   );
 };

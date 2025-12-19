@@ -25,7 +25,7 @@ const LoginPage = () => {
   const handleGoogleLogin = () => {
     console.log('Google login');
     // Aquí irá la lógica de autenticación con Google
-    alert('Iniciando sesión con Google...');
+    alert('La logica de Google aún no está implementada.');
   };
 
   const currentText = activeTab === 'login' ? authTexts.login : authTexts.register;
