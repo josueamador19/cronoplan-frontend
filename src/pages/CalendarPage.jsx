@@ -124,11 +124,42 @@ const CalendarPage = () => {
     }
   };
 
+  // Obtener subtítulo según la vista
+  const getDateSubtitle = () => {
+    if (activeView === 'month') {
+      const tasksThisMonth = tasks.filter(task => {
+        if (!task.due_date) return false;
+        const taskDate = new Date(task.due_date);
+        return taskDate.getMonth() === currentDate.getMonth() && 
+               taskDate.getFullYear() === currentDate.getFullYear();
+      });
+      return `${tasksThisMonth.length} actividades este mes`;
+    } else if (activeView === 'week') {
+      const weekNumber = getWeekNumber(currentDate);
+      return `Semana ${weekNumber}`;
+    } else if (activeView === 'day') {
+      const tasksToday = tasks.filter(task => {
+        if (!task.due_date) return false;
+        const taskDate = new Date(task.due_date);
+        return taskDate.toDateString() === currentDate.toDateString();
+      });
+      return `${tasksToday.length} actividades hoy`;
+    }
+  };
+
   const getStartOfWeek = (date) => {
     const d = new Date(date);
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Lunes como inicio
     return new Date(d.setDate(diff));
+  };
+
+  const getWeekNumber = (date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
   };
 
   if (loading) {
@@ -187,29 +218,31 @@ const CalendarPage = () => {
       />
 
       <div className="calendar-container">
-        {/* Controles del calendario */}
-        <div className="calendar-controls">
-          <div className="calendar-controls-left">
-            <button className="btn-today" onClick={handleToday}>
-              Hoy
-            </button>
-            
+        {/* ⭐ HEADER REORGANIZADO */}
+        <div className="calendar-header">
+          {/* IZQUIERDA: Navegación + Fecha */}
+          <div className="calendar-header-left">
             <div className="calendar-navigation">
-              <button className="btn-nav" onClick={handlePrevious}>
-                ‹
+              <button className="btn-nav" onClick={handlePrevious} title="Anterior">
+                ←
               </button>
-              <button className="btn-nav" onClick={handleNext}>
-                ›
+              <button className="btn-nav btn-today" onClick={handleToday}>
+                Hoy
+              </button>
+              <button className="btn-nav" onClick={handleNext} title="Siguiente">
+                →
               </button>
             </div>
-            
-            <h2 className="calendar-title">{getDateTitle()}</h2>
+
+            <div className="calendar-current-date">
+              <h2 className="current-date-main">{getDateTitle()}</h2>
+              <p className="current-date-subtitle">{getDateSubtitle()}</p>
+            </div>
           </div>
 
-          <div className="calendar-controls-right">
-
-            {/* Vista selector */}
-            <div className="view-selector">
+          {/* DERECHA: Selector de vista */}
+          <div className="calendar-header-right">
+            <div className="calendar-view-tabs">
               <button 
                 className={`view-tab ${activeView === 'month' ? 'active' : ''}`}
                 onClick={() => setActiveView('month')}

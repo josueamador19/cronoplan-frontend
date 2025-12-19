@@ -1,4 +1,254 @@
 /* ============================================
+   CALENDAR CONTAINER
+   ============================================ */
+.calendar-container {
+  background: var(--bg-primary, white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.calendar-view {
+  padding: 1.5rem;
+}
+
+/* ============================================
+   CALENDAR HEADER - REORGANIZADO
+   ============================================ */
+
+/* Header principal del calendario */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: var(--bg-primary, white);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px 12px 0 0;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Lado izquierdo: Navegación y fecha */
+.calendar-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+  min-width: 300px;
+}
+
+/* Navegación (flechas + Hoy) */
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-nav {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color, #d1d5db);
+  background: var(--bg-primary, white);
+  color: var(--text-secondary, #6b7280);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 16px;
+}
+
+.btn-nav:hover {
+  background: var(--bg-secondary, #f9fafb);
+  border-color: #9ca3af;
+  color: var(--text-primary, #111827);
+}
+
+.btn-today {
+  padding: 0.5rem 1rem;
+  height: 36px;
+  width: auto;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Fecha actual */
+.calendar-current-date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.current-date-main {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  margin: 0;
+}
+
+.current-date-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* Lado derecho: Selectores de vista */
+.calendar-header-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Tabs de vista (Mes, Semana, Día) */
+.calendar-view-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-secondary, #f3f4f6);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.view-tab {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.view-tab:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary, #111827);
+}
+
+.view-tab.active {
+  background: var(--bg-primary, white);
+  color: #3b82f6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   RESPONSIVE - TABLET
+   ============================================ */
+@media (max-width: 1024px) {
+  .calendar-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .calendar-header-left {
+    min-width: 250px;
+  }
+
+  .current-date-main {
+    font-size: 1.3rem;
+  }
+
+  .view-tab {
+    padding: 0.4rem 0.8rem;
+    font-size: 13px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - MÓVIL
+   ============================================ */
+@media (max-width: 768px) {
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .calendar-header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 100%;
+    gap: 1rem;
+  }
+
+  .calendar-navigation {
+    order: 1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .calendar-current-date {
+    order: 0;
+    text-align: left;
+  }
+
+  .current-date-main {
+    font-size: 1.2rem;
+  }
+
+  .current-date-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .calendar-header-right {
+    width: 100%;
+  }
+
+  .calendar-view-tabs {
+    width: 100%;
+  }
+
+  .view-tab {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - MÓVIL PEQUEÑO
+   ============================================ */
+@media (max-width: 480px) {
+  .calendar-header {
+    padding: 0.75rem;
+  }
+
+  .current-date-main {
+    font-size: 1.1rem;
+  }
+
+  .btn-nav {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .btn-today {
+    padding: 0.4rem 0.8rem;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .view-tab {
+    padding: 0.5rem;
+    font-size: 12px;
+  }
+}
+
+/* ============================================
+   MODO OSCURO
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  .btn-nav:hover {
+    background: var(--bg-tertiary, #333);
+  }
+
+  .view-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+/* ============================================
    CALENDAR - RESPONSIVE STYLES
    ============================================ */
 
