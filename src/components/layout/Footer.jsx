@@ -35,7 +35,8 @@ const Footer = () => {
             </p>
           </Col>
 
-          {/* Producto */}
+          {/**
+          
           <Col lg={2} md={6} className="mb-4">
             <h5 className="footer-title">Producto</h5>
             {footerLinks.producto.map((link, index) => (
@@ -45,7 +46,7 @@ const Footer = () => {
             ))}
           </Col>
 
-          {/* Recursos */}
+          
           <Col lg={2} md={6} className="mb-4">
             <h5 className="footer-title">Recursos</h5>
             {footerLinks.recursos.map((link, index) => (
@@ -55,7 +56,7 @@ const Footer = () => {
             ))}
           </Col>
 
-          {/* Compañía */}
+          
           <Col lg={2} md={6} className="mb-4">
             <h5 className="footer-title">Compañía</h5>
             {footerLinks.compania.map((link, index) => (
@@ -64,11 +65,14 @@ const Footer = () => {
               </a>
             ))}
           </Col>
+           * 
+           */}
 
           {/* Redes sociales */}
           <Col lg={2} md={12} className="mb-4">
             <h5 className="footer-title">Síguenos</h5>
             <div className="d-flex gap-3">
+              {/* 
               <a 
                 href="#" 
                 style={{ color: '#999', fontSize: '1.5rem', transition: 'color 0.3s' }}
@@ -76,7 +80,7 @@ const Footer = () => {
                 onMouseLeave={(e) => e.target.style.color = '#999'}
               >
                 <FaTwitter />
-              </a>
+              </a>*/}
               <a 
                 href="#" 
                 style={{ color: '#999', fontSize: '1.5rem', transition: 'color 0.3s' }}
@@ -86,7 +90,7 @@ const Footer = () => {
                 <FaLinkedin />
               </a>
               <a 
-                href="#" 
+                href="https://github.com/josueamador19" 
                 style={{ color: '#999', fontSize: '1.5rem', transition: 'color 0.3s' }}
                 onMouseEnter={(e) => e.target.style.color = '#5B68F5'}
                 onMouseLeave={(e) => e.target.style.color = '#999'}
@@ -101,7 +105,7 @@ const Footer = () => {
         <Row className="mt-4 pt-4" style={{ borderTop: '1px solid #333' }}>
           <Col className="text-center">
             <p style={{ color: '#666', fontSize: '0.9rem', margin: 0 }}>
-              © 2024 CronoPlan Inc. Todos los derechos reservados.
+              © 2025 CronoPlan Inc. Todos los derechos reservados.
             </p>
           </Col>
         </Row>

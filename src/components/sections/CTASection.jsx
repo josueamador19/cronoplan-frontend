@@ -1,9 +1,11 @@
 // src/components/sections/CTASection.jsx
 import React from 'react';
 import { Container } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
 
 const CTASection = () => {
+   const navigate = useNavigate();
   return (
     <section className="py-5" style={{ background: '#fff' }}>
       <Container>
@@ -19,6 +21,7 @@ const CTASection = () => {
             <Button 
               variant="outline" 
               size="lg"
+              onClick={() => navigate('/register')}
               style={{ 
                 background: 'white', 
                 color: '#5B68F5',

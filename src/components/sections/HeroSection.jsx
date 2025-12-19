@@ -2,8 +2,9 @@
 import React from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import Button from '../ui/Button';
-
+import { useNavigate } from 'react-router-dom';
 const HeroSection = () => {
+   const navigate = useNavigate();
   return (
     <section className="hero-section">
       <Container>
@@ -23,7 +24,7 @@ const HeroSection = () => {
             </p>
             
             <div className="d-flex gap-3 mb-3">
-              <Button variant="primary" size="lg">
+              <Button variant="primary" size="lg" onClick={() => navigate('/register')}>
                 Comenzar gratis
               </Button>
               <Button variant="outline" size="lg">
