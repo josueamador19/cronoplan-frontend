@@ -18,10 +18,23 @@ export const api = axios.create({
 });
 
 // =====================================================
-// INTERCEPTOR PARA MANEJAR SESIÓN EXPIRADA
+// INTERCEPTOR PARA MANEJAR SESIÓN Y REFRESH TOKENS
 // =====================================================
 
-let isRedirecting = false;
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
 
 // Función para configurar interceptores (reutilizable)
 const setupInterceptors = (axiosInstance) => {
@@ -39,47 +52,108 @@ const setupInterceptors = (axiosInstance) => {
     }
   );
 
-  // Interceptor de Response - Maneja errores 401
+  // Interceptor de Response - Maneja errores 401 y renueva tokens
   axiosInstance.interceptors.response.use(
     (response) => {
       return response;
     },
-    (error) => {
-      // Si el error es 401 (sesión expirada o no autorizado)
-      if (error.response?.status === 401 && !isRedirecting) {
-        isRedirecting = true;
+    async (error) => {
+      const originalRequest = error.config;
+
+      // Si el error es 401 (token expirado)
+      if (error.response?.status === 401 && !originalRequest._retry) {
         
-        //console.log('Sesión expirada - Redirigiendo al login...');
-        
-        // Obtener mensaje del backend
-        const errorMessage = error.response?.data?.detail || 'Tu sesión ha expirado';
-        
-        // Guardar la URL actual ANTES de limpiar
-        const currentPath = window.location.pathname;
-        if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/') {
-          //console.log('Guardando URL para redirect:', currentPath);
-          localStorage.setItem('redirect_after_login', currentPath);
+        // Si ya estamos refrescando, agregar a la cola
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(token => {
+              originalRequest.headers['Authorization'] = 'Bearer ' + token;
+              return axiosInstance(originalRequest);
+            })
+            .catch(err => {
+              return Promise.reject(err);
+            });
         }
-        
-        // Limpiar datos de autenticación
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
-        
-        // Emitir evento para mostrar notificación
-        window.dispatchEvent(new CustomEvent('auth:session-expired', {
-          detail: { message: errorMessage }
-        }));
-        
-        // Redirigir al login después de 1.5 segundos
-        setTimeout(() => {
-          window.location.href = '/login';
-          isRedirecting = false;
-        }, 1500);
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        // Si no hay refresh token, cerrar sesión
+        if (!refreshToken) {
+          console.log('No hay refresh token - Cerrando sesión');
+          handleSessionExpired('Tu sesión ha expirado');
+          return Promise.reject(error);
+        }
+
+        try {
+          // Intentar renovar el token
+          console.log('Intentando renovar token...');
+          const response = await axios.post(
+            `${API_BASE_URL}/auth/refresh`,
+            { refresh_token: refreshToken }
+          );
+
+          const { access_token, refresh_token: newRefreshToken, user } = response.data;
+
+          // Guardar nuevos tokens
+          localStorage.setItem('access_token', access_token);
+          localStorage.setItem('refresh_token', newRefreshToken);
+          localStorage.setItem('user', JSON.stringify(user));
+
+          console.log('Token renovado exitosamente');
+
+          // Actualizar header del request original
+          originalRequest.headers['Authorization'] = 'Bearer ' + access_token;
+          
+          // Procesar la cola de requests pendientes
+          processQueue(null, access_token);
+          
+          isRefreshing = false;
+
+          // Reintentar el request original
+          return axiosInstance(originalRequest);
+
+        } catch (refreshError) {
+          console.error('Error al renovar token:', refreshError);
+          
+          // Si el refresh token también expiró, cerrar sesión
+          processQueue(refreshError, null);
+          isRefreshing = false;
+          
+          handleSessionExpired('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+          return Promise.reject(refreshError);
+        }
       }
       
       return Promise.reject(error);
     }
   );
+};
+
+// Función para manejar sesión expirada
+const handleSessionExpired = (message) => {
+  // Guardar la URL actual para redirect después del login
+  const currentPath = window.location.pathname;
+  if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/') {
+    localStorage.setItem('redirect_after_login', currentPath);
+  }
+  
+  // Limpiar datos de autenticación
+  clearAuthData();
+  
+  // Emitir evento para mostrar notificación
+  window.dispatchEvent(new CustomEvent('auth:session-expired', {
+    detail: { message }
+  }));
+  
+  // Redirigir al login
+  setTimeout(() => {
+    window.location.href = '/login';
+  }, 1500);
 };
 
 // Configurar interceptores en ambas instancias
@@ -217,8 +291,39 @@ export const verifyToken = async () => {
   }
 };
 
+/**
+ * Renovar access token manualmente 
+ */
+export const refreshAccessToken = async () => {
+  try {
+    const refreshToken = localStorage.getItem('refresh_token');
+    
+    if (!refreshToken) {
+      throw new Error('No hay refresh token');
+    }
+    
+    const response = await axios.post(
+      `${API_BASE_URL}/auth/refresh`,
+      { refresh_token: refreshToken }
+    );
+    
+    const { access_token, refresh_token: newRefreshToken, user } = response.data;
+    
+    // Guardar nuevos tokens
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('refresh_token', newRefreshToken);
+    localStorage.setItem('user', JSON.stringify(user));
+    
+    return response.data;
+  } catch (error) {
+    // Si falla, limpiar todo y cerrar sesión
+    clearAuthData();
+    throw error;
+  }
+};
+
 // =====================================================
-// FUNCIONES DE PERFIL (NUEVAS)
+// FUNCIONES DE PERFIL
 // =====================================================
 
 /**
@@ -316,6 +421,7 @@ export const updateUserName = async (fullName) => {
 
 export const saveAuthData = (data) => {
   localStorage.setItem('access_token', data.access_token);
+  localStorage.setItem('refresh_token', data.refresh_token); 
   localStorage.setItem('user', JSON.stringify(data.user));
 };
 
@@ -328,8 +434,13 @@ export const getStoredToken = () => {
   return localStorage.getItem('access_token');
 };
 
+export const getStoredRefreshToken = () => {
+  return localStorage.getItem('refresh_token');
+};
+
 export const clearAuthData = () => {
   localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token'); 
   localStorage.removeItem('user');
   localStorage.removeItem('redirect_after_login');
 };
