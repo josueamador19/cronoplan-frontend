@@ -60,8 +60,12 @@ const setupInterceptors = (axiosInstance) => {
     async (error) => {
       const originalRequest = error.config;
 
-      // Si el error es 401 (token expirado)
-      if (error.response?.status === 401 && !originalRequest._retry) {
+      // Si el error es 401 (token expirado) y no es el endpoint de refresh
+      if (
+        error.response?.status === 401 && 
+        !originalRequest._retry &&
+        !originalRequest.url.includes('/auth/refresh')
+      ) {
         
         // Si ya estamos refrescando, agregar a la cola
         if (isRefreshing) {
@@ -85,26 +89,40 @@ const setupInterceptors = (axiosInstance) => {
         // Si no hay refresh token, cerrar sesión
         if (!refreshToken) {
           console.log('No hay refresh token - Cerrando sesión');
+          isRefreshing = false;
           handleSessionExpired('Tu sesión ha expirado');
           return Promise.reject(error);
         }
 
         try {
-          // Intentar renovar el token
-          console.log('Intentando renovar token...');
-          const response = await axios.post(
+          // ✅ USAR UNA INSTANCIA LIMPIA DE AXIOS PARA REFRESH
+          console.log('🔄 Intentando renovar token...');
+          
+          const refreshResponse = await axios.post(
             `${API_BASE_URL}/auth/refresh`,
-            { refresh_token: refreshToken }
+            { refresh_token: refreshToken },
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
           );
 
-          const { access_token, refresh_token: newRefreshToken, user } = response.data;
+          const { access_token, refresh_token: newRefreshToken, user } = refreshResponse.data;
+
+          // Validar que recibimos los tokens
+          if (!access_token || !newRefreshToken) {
+            throw new Error('Respuesta de refresh incompleta');
+          }
 
           // Guardar nuevos tokens
           localStorage.setItem('access_token', access_token);
           localStorage.setItem('refresh_token', newRefreshToken);
-          localStorage.setItem('user', JSON.stringify(user));
+          if (user) {
+            localStorage.setItem('user', JSON.stringify(user));
+          }
 
-          console.log('Token renovado exitosamente');
+          console.log('✅ Token renovado exitosamente');
 
           // Actualizar header del request original
           originalRequest.headers['Authorization'] = 'Bearer ' + access_token;
@@ -118,7 +136,7 @@ const setupInterceptors = (axiosInstance) => {
           return axiosInstance(originalRequest);
 
         } catch (refreshError) {
-          console.error('Error al renovar token:', refreshError);
+          console.error('❌ Error al renovar token:', refreshError.response?.data || refreshError.message);
           
           // Si el refresh token también expiró, cerrar sesión
           processQueue(refreshError, null);
@@ -304,7 +322,12 @@ export const refreshAccessToken = async () => {
     
     const response = await axios.post(
       `${API_BASE_URL}/auth/refresh`,
-      { refresh_token: refreshToken }
+      { refresh_token: refreshToken },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
     );
     
     const { access_token, refresh_token: newRefreshToken, user } = response.data;
