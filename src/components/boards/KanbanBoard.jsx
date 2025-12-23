@@ -1,10 +1,16 @@
-
 import React, { useState } from 'react';
 import KanbanColumn from './KanbanColumn';
 import { kanbanColumns } from '../../constants/dashboardData';
 import { updateTaskStatus } from '../services/tasksService';
 
-const KanbanBoard = ({ tasks = [], onAddTask, onTaskClick, onTaskUpdate }) => {
+const KanbanBoard = ({ 
+  tasks = [], 
+  boards = [], 
+  onAddTask, 
+  onTaskClick, 
+  onTaskUpdate,
+  onTaskDelete 
+}) => {
   const [draggingTask, setDraggingTask] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -36,8 +42,6 @@ const KanbanBoard = ({ tasks = [], onAddTask, onTaskClick, onTaskUpdate }) => {
       // Actualizar en el backend
       await updateTaskStatus(draggingTask.id, columnId);
       
-      
-      
       // Notificar al componente padre para que recargue los datos
       if (onTaskUpdate) {
         onTaskUpdate();
@@ -59,8 +63,11 @@ const KanbanBoard = ({ tasks = [], onAddTask, onTaskClick, onTaskUpdate }) => {
           key={column.id}
           column={column}
           tasks={getTasksByColumn(column.id)}
+          boards={boards}
           onAddTask={() => onAddTask && onAddTask(column.id)}
           onTaskClick={onTaskClick}
+          onTaskUpdate={onTaskUpdate} 
+          onTaskDelete={onTaskDelete} 
           onDragStart={handleDragStart}
           onDrop={() => handleDrop(column.id)}
           isDragging={isDragging}

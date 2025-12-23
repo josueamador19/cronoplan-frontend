@@ -1,4 +1,3 @@
-// src/pages/BoardPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -17,7 +16,7 @@ const BoardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // ⭐ Estados para el modal
+  // Estados para el modal
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState('todo');
 
@@ -31,7 +30,7 @@ const BoardPage = () => {
       setLoading(true);
       setError(null);
 
-      console.log(`🔄 Cargando board ${id}...`);
+      //console.log(`Cargando board ${id}...`);
 
       // Cargar board y sus tareas
       const [boardData, tasksData] = await Promise.all([
@@ -76,7 +75,7 @@ const BoardPage = () => {
     dueDate: formatDate(task.due_date),
     board: task.board || board?.name || 'Sin tablero',
     boardId: task.board_id,
-    column: task.status, // todo, progress, done
+    column: task.status, 
     completed: task.completed,
     assignee: task.assignee || { 
       name: 'Sin asignar', 
@@ -99,7 +98,7 @@ const BoardPage = () => {
     setIsTaskModalOpen(true);
   };
 
-  // ⭐ Manejar éxito al crear tarea
+  // Manejar éxito al crear tarea
   const handleTaskCreated = async (newTask) => {
     //console.log('Tarea creada:', newTask);
     setIsTaskModalOpen(false);
@@ -107,11 +106,13 @@ const BoardPage = () => {
     await loadBoardData();
   };
 
-  const handleTaskClick = (task) => {
+{/**
+    const handleTaskClick = (task) => {
     console.log('Click en tarea:', task);
-    alert(`Ver/editar tarea: ${task.title} - Próximamente`);
+    //alert(`Ver/editar tarea: ${task.title} - Próximamente`);
     // TODO: Abrir modal para ver/editar tarea
   };
+  */}
 
   const handleTaskUpdate = async () => {
     // Recargar datos después de actualizar una tarea

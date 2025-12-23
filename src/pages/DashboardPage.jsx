@@ -1,4 +1,3 @@
-// src/pages/DashboardPage.jsx - CON MODAL DE CREAR TAREA
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -13,7 +12,7 @@ import { getStoredUser } from '../components/services/authService';
 const DashboardPage = () => {
   const navigate = useNavigate();
   const user = getStoredUser();
-  
+
   const [boards, setBoards] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(null);
@@ -21,7 +20,7 @@ const DashboardPage = () => {
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('kanban');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  
+
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskModalDefaultStatus, setTaskModalDefaultStatus] = useState('todo');
@@ -67,7 +66,7 @@ const DashboardPage = () => {
         */}
     } catch (error) {
       console.error('Error al cargar dashboard:', error);
-      
+
       if (error.response?.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
@@ -81,14 +80,14 @@ const DashboardPage = () => {
   };
 
   const handleBoardCreated = async (newBoard) => {
-    console.log('Nuevo board creado:', newBoard);
+    //console.log('Nuevo board creado:', newBoard);
     const updatedBoards = await getAllBoards();
     setBoards(updatedBoards);
     setSelectedBoard(newBoard.id);
   };
 
   const handleTaskCreated = async (newTask) => {
-    console.log('Nueva tarea creada desde modal:', newTask);
+    //console.log('Nueva tarea creada desde modal:', newTask);
     // Recargar todas las tareas
     await loadDashboardData();
     // Cerrar el modal
@@ -101,19 +100,19 @@ const DashboardPage = () => {
 
 
   const handleAddTask = (columnId = 'todo') => {
-    console.log('Abriendo modal para crear tarea en columna:', columnId);
+    //console.log('Abriendo modal para crear tarea en columna:', columnId);
     setTaskModalDefaultStatus(columnId);
     setIsTaskModalOpen(true);
   };
 
-  
+
   const handleCloseTaskModal = () => {
     setIsTaskModalOpen(false);
     setTaskModalDefaultStatus('todo');
   };
 
   const handleTaskClick = (task) => {
-    alert(`Ver/editar tarea: ${task.title} - Próximamente`);
+    //alert(`Ver/editar tarea: ${task.title} - Próximamente`);
     // TODO: Abrir modal para ver/editar tarea
   };
 
@@ -124,28 +123,39 @@ const DashboardPage = () => {
 
   // Transformar tareas del backend al formato del frontend
   const transformedTasks = filteredTasks.map(task => ({
-    id: task.id,
-    title: task.title,
-    status: task.status_badge || 'Sin categoría',
-    statusColor: task.status_badge_color || '#9254DE',
-    priority: task.priority,
-    dueDate: formatDate(task.due_date),
-    board: task.board || 'Sin tablero',
-    boardId: task.board_id,
-    column: task.status,
-    completed: task.completed,
-    assignee: task.assignee || { 
-      name: 'Sin asignar', 
-      avatar: 'https://ui-avatars.com/api/?name=NA&background=cccccc&color=666666' 
-    }
-  }));
+  id: task.id,
+  title: task.title,
+  description: task.description, 
+  status: task.status_badge || 'Sin categoría',
+  statusColor: task.status_badge_color || '#9254DE',
+  priority: task.priority,
+  dueDate: formatDate(task.due_date),
+  board: task.board || 'Sin tablero',
+  boardId: task.board_id,
+  column: task.status,
+  completed: task.completed,
+  due_date: task.due_date,
+  due_time: task.due_time,
+  status_badge: task.status_badge,
+  status_badge_color: task.status_badge_color,
+  board_id: task.board_id,
+  assignee_id: task.assignee_id,
+  assignee: task.assignee || { 
+    name: 'Sin asignar', 
+    avatar: 'https://ui-avatars.com/api/?name=NA&background=cccccc&color=666666' 
+  }
+}));
 
   function formatDate(dateString) {
-    if (!dateString) return 'Sin fecha';
-    const date = new Date(dateString);
-    const options = { day: 'numeric', month: 'short', year: 'numeric' };
-    return date.toLocaleDateString('es-ES', options);
-  }
+  if (!dateString) return 'Sin fecha';
+  
+  const [year, month, day] = dateString.split('-');
+  const date = new Date(year, month - 1, day);
+  
+  const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  
+  return `${parseInt(day)} ${meses[date.getMonth()]} ${year}`;
+}
 
   // Calcular estadísticas
   const stats = {
@@ -171,7 +181,7 @@ const DashboardPage = () => {
     return (
       <DashboardLayout activeItem="inicio">
         <div className="dashboard-error">
-          <h3>⚠️ {error}</h3>
+          <h3>{error}</h3>
           <button onClick={loadDashboardData}>
             Reintentar
           </button>
@@ -182,7 +192,7 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout activeItem="inicio">
-      <TopBar 
+      <TopBar
         title={`¡Bienvenido, ${user?.full_name || 'Usuario'}!`}
         subtitle="Aquí está un resumen de tu productividad"
         onTaskCreated={handleTaskCreated}
@@ -225,13 +235,13 @@ const DashboardPage = () => {
       <div className="dashboard-controls">
         <div className="dashboard-controls-left">
           <h2 className={isMobile ? 'hide-mobile' : ''}>
-            {selectedBoard 
+            {selectedBoard
               ? boards.find(b => b.id === selectedBoard)?.name
               : 'Todas las tareas'}
           </h2>
           <div className="board-selector">
-            <select 
-              value={selectedBoard || ''} 
+            <select
+              value={selectedBoard || ''}
               onChange={(e) => handleBoardSelect(Number(e.target.value) || null)}
             >
               <option value="">Todos los tableros</option>
@@ -246,13 +256,13 @@ const DashboardPage = () => {
 
         <div className="dashboard-controls-right">
           <div className="view-toggle">
-            <button 
+            <button
               className={activeView === 'kanban' ? 'active' : ''}
               onClick={() => setActiveView('kanban')}
             >
               <span className="hide-mobile">📊</span> Kanban
             </button>
-            <button 
+            <button
               className={activeView === 'list' ? 'active' : ''}
               onClick={() => setActiveView('list')}
             >
@@ -271,16 +281,18 @@ const DashboardPage = () => {
             {activeView === 'kanban' ? (
               <KanbanBoard
                 tasks={transformedTasks}
-                onAddTask={handleAddTask} // ⭐ Pasa la función al KanbanBoard
+                boards={boards}
+                onAddTask={handleAddTask}
                 onTaskClick={handleTaskClick}
                 onTaskUpdate={loadDashboardData}
+                onTaskDelete={loadDashboardData} 
               />
             ) : (
               <TaskList
                 tasks={transformedTasks}
                 filters={[]}
-                onFilterRemove={() => {}}
-                onClearFilters={() => {}}
+                onFilterRemove={() => { }}
+                onClearFilters={() => { }}
               />
             )}
           </>
@@ -301,7 +313,7 @@ const DashboardPage = () => {
 
 // Componente StatCard RESPONSIVE
 const StatCard = ({ icon, title, value, color, onClick }) => (
-  <div 
+  <div
     className="stat-card"
     onClick={onClick}
     style={{ cursor: onClick ? 'pointer' : 'default' }}

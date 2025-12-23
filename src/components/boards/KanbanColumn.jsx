@@ -4,8 +4,11 @@ import TaskCard from './TaskCard';
 const KanbanColumn = ({ 
   column, 
   tasks = [], 
+  boards = [], 
   onAddTask, 
   onTaskClick,
+  onTaskUpdate, 
+  onTaskDelete, 
   onDragStart,
   onDrop,
   isDragging,
@@ -52,8 +55,11 @@ const KanbanColumn = ({
             <TaskCard
               key={task.id}
               task={task}
+              boards={boards} 
               onClick={() => onTaskClick && onTaskClick(task)}
               onDragStart={() => onDragStart && onDragStart(task)}
+              onTaskUpdate={onTaskUpdate} 
+              onTaskDelete={onTaskDelete} 
               draggable={true}
             />
           ))
