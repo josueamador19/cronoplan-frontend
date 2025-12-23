@@ -101,36 +101,97 @@ const EditTaskModal = ({
     }));
   };
 
-  const handleSaveEdit = async (e) => {
-    e.preventDefault();
-    
-    if (!editData.title || !editData.title.trim()) {
-      setError('El título de la tarea es requerido');
-      return;
+const handleSaveEdit = async (e) => {
+  e.preventDefault();
+  
+  if (!editData.title || !editData.title.trim()) {
+    setError('El título de la tarea es requerido');
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+
+  try {
+    // Construir el payload con los tipos correctos según el backend
+    const payload = {
+      title: editData.title.trim(),
+    };
+
+    // Solo agregar campos que tienen valores válidos
+    if (editData.description !== undefined && editData.description !== null) {
+      payload.description = editData.description;
     }
 
-    setLoading(true);
-    setError('');
+    if (editData.board_id) {
+      payload.board_id = parseInt(editData.board_id);
+    }
 
-    try {
-      const updatedTask = await updateTask(task.id, {
-        ...editData,
-        board_id: editData.board_id || null,
-        status_badge: editData.status_badge || null
-      });
+    if (editData.priority) {
+      payload.priority = editData.priority;
+    }
+
+    // MAPEAR status - SOLO UNA VEZ
+    if (editData.status) {
+      const statusMap = {
+        'Sin categoría': 'todo', 
+        'En progreso': 'progress',
+        'En revisión': 'review',
+        'Completada': 'done'
+      };
       
-      if (onTaskUpdate) {
-        onTaskUpdate(updatedTask);
-      }
-      setIsEditing(false);
-      onClose();
-    } catch (error) {
-      console.error('Error:', error);
-      setError('Error al actualizar la tarea');
-    } finally {
-      setLoading(false);
+      payload.status = statusMap[editData.status] || editData.status;
     }
-  };
+
+    if (editData.status_badge) {
+      payload.status_badge = editData.status_badge;
+    }
+
+    if (editData.status_badge_color) {
+      payload.status_badge_color = editData.status_badge_color;
+    }
+
+    if (editData.assignee_id) {
+      payload.assignee_id = String(editData.assignee_id);
+    }
+
+    if (editData.due_date) {
+      payload.due_date = editData.due_date;
+    }
+
+    if (editData.due_time) {
+      payload.due_time = editData.due_time;
+    }
+
+    if (editData.completed !== undefined && editData.completed !== null) {
+      payload.completed = Boolean(editData.completed);
+    }
+
+    console.log('📤 Payload a enviar:', payload);
+    console.log('🆔 Task ID:', task.id);
+
+    const updatedTask = await updateTask(task.id, payload);
+    
+    if (onTaskUpdate) {
+      onTaskUpdate(updatedTask);
+    }
+    setIsEditing(false);
+    onClose();
+  } catch (error) {
+    console.error('❌ Error completo:', error);
+    console.error('📋 Response data:', error.response?.data);
+    console.error('🔢 Status:', error.response?.status);
+    
+    const errorMessage = error.response?.data?.detail 
+      || error.response?.data?.message 
+      || 'Error al actualizar la tarea';
+    
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleMoveToBoard = async (newBoardId) => {
     setLoading(true);

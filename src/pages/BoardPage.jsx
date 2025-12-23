@@ -106,13 +106,13 @@ const BoardPage = () => {
     await loadBoardData();
   };
 
-{/**
+
     const handleTaskClick = (task) => {
     console.log('Click en tarea:', task);
     //alert(`Ver/editar tarea: ${task.title} - Próximamente`);
     // TODO: Abrir modal para ver/editar tarea
   };
-  */}
+  
 
   const handleTaskUpdate = async () => {
     // Recargar datos después de actualizar una tarea
