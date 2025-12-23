@@ -3,7 +3,7 @@ import { FaCalendarAlt } from 'react-icons/fa';
 import PriorityBadge from '../tasks/PriorityBadge';
 import StatusBadge from '../tasks/StatusBadge';
 import EditTaskModal from '../modals/EditTaskModal';
-import '../../styles/taskCard.css';
+import '../../styles/TaskCard.css';
 
 const TaskCard = ({ 
   task, 
