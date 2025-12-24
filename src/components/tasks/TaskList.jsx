@@ -1,149 +1,23 @@
-// src/components/tasks/TaskList.jsx
 import React, { useState } from 'react';
 import TaskRow from './TaskRow';
 import TaskFilters from './TaskFilters';
+import EditTaskModal from '../modals/EditTaskModal';
 import '../../styles/TaskList.css';
 
-// Iconos SVG simples
-const FilterIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-  </svg>
-);
-
-const ChevronDownIcon = ({ isOpen }) => (
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{
-    transition: 'transform 0.2s',
-    transform: isOpen ? 'rotate(180deg)' : 'rotate(0)'
-  }}>
-    <polyline points="6 9 12 15 18 9"></polyline>
-  </svg>
-);
-
-// Componente de filtros desplegables
-const FilterDropdown = ({ label, options, value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 14px',
-          border: '1px solid #e5e7eb',
-          borderRadius: '8px',
-          background: value ? '#eff6ff' : 'white',
-          cursor: 'pointer',
-          fontSize: '0.875rem',
-          color: value ? '#1d4ed8' : '#374151',
-          fontWeight: value ? '500' : '400',
-          transition: 'all 0.2s'
-        }}
-        onMouseEnter={(e) => {
-          if (!value) e.currentTarget.style.borderColor = '#d1d5db';
-        }}
-        onMouseLeave={(e) => {
-          if (!value) e.currentTarget.style.borderColor = '#e5e7eb';
-        }}
-      >
-        <span>{label}</span>
-        <ChevronDownIcon isOpen={isOpen} />
-      </button>
-      
-      {isOpen && (
-        <>
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 999
-            }}
-            onClick={() => setIsOpen(false)}
-          />
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            marginTop: '6px',
-            background: 'white',
-            border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
-            minWidth: '200px',
-            maxHeight: '300px',
-            overflowY: 'auto',
-            zIndex: 1000
-          }}>
-            {options.map((option) => (
-              <div
-                key={option.value}
-                onClick={() => {
-                  onChange(option.value === value ? null : option.value);
-                  setIsOpen(false);
-                }}
-                style={{
-                  padding: '10px 14px',
-                  cursor: 'pointer',
-                  background: option.value === value ? '#eff6ff' : 'white',
-                  color: option.value === value ? '#1d4ed8' : '#374151',
-                  fontWeight: option.value === value ? '500' : '400',
-                  fontSize: '0.875rem',
-                  borderBottom: '1px solid #f3f4f6',
-                  transition: 'background 0.15s'
-                }}
-                onMouseEnter={(e) => {
-                  if (option.value !== value) {
-                    e.currentTarget.style.background = '#f9fafb';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (option.value !== value) {
-                    e.currentTarget.style.background = 'white';
-                  }
-                }}
-              >
-                {option.label}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
-
-const TaskList = ({ tasks = [], filters = [], onFilterRemove, onClearFilters }) => {
-  const [activeView, setActiveView] = useState('list');
+const TaskList = ({ 
+  tasks = [], 
+  filters = [], 
+  onFilterRemove, 
+  onClearFilters,
+  boards = [],
+  onTaskUpdate,
+  onTaskDelete 
+}) => {
   const [priorityFilter, setPriorityFilter] = useState(null);
   const [dateFilter, setDateFilter] = useState(null);
   const [boardFilter, setBoardFilter] = useState(null);
-
-  // Opciones para los filtros
-  const priorityOptions = [
-    { value: 'Alta', label: 'Alta' },
-    { value: 'Media', label: 'Media' },
-    { value: 'Baja', label: 'Baja' }
-  ];
-
-  const dateOptions = [
-    { value: 'hoy', label: 'Hoy' },
-    { value: 'esta-semana', label: 'Esta semana' },
-    { value: 'este-mes', label: 'Este mes' },
-    { value: 'vencidas', label: 'Vencidas' }
-  ];
-
-  // Obtener tableros únicos de las tareas
-  const uniqueBoards = [...new Set(tasks.map(t => t.board).filter(Boolean))];
-  const boardOptions = [
-    { value: 'sin-tablero', label: 'Sin tablero' },
-    ...uniqueBoards.map(board => ({ value: board, label: board }))
-  ];
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Función de filtrado
   const getFilteredTasks = () => {
@@ -158,38 +32,70 @@ const TaskList = ({ tasks = [], filters = [], onFilterRemove, onClearFilters }) 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
+        // Si la tarea no tiene fecha, no pasa ningún filtro de fecha
+        if (!task.dueDate || task.dueDate === 'Sin fecha') {
+          return false;
+        }
+
+        // Para tareas marcadas como "Vencida"
+        if (task.dueDate === 'Vencida') {
+          return dateFilter === 'vencidas';
+        }
+
         let taskDate = null;
-        if (task.dueDate && task.dueDate !== 'Sin fecha') {
-          // Parsear diferentes formatos de fecha
-          if (task.dueDate === 'Hoy') {
-            taskDate = new Date();
-          } else if (task.dueDate === 'Ayer') {
-            taskDate = new Date();
-            taskDate.setDate(taskDate.getDate() - 1);
-          } else if (task.dueDate === 'Vencida') {
-            // Para "Vencida" no podemos determinar la fecha exacta
-            if (dateFilter === 'vencidas') return true;
-            return false;
+        
+        // Parsear diferentes formatos de fecha
+        if (task.dueDate === 'Hoy') {
+          taskDate = new Date();
+          taskDate.setHours(0, 0, 0, 0);
+        } else if (task.dueDate === 'Ayer') {
+          taskDate = new Date();
+          taskDate.setDate(taskDate.getDate() - 1);
+          taskDate.setHours(0, 0, 0, 0);
+        } else {
+          // Intentar parsear fechas en diferentes formatos
+          // Formato: "24 dic 2025", "8 ene 2026", etc.
+          const meses = {
+            'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
+            'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
+          };
+          
+          const match = task.dueDate.match(/(\d+)\s+(\w+)\s+(\d+)/);
+          if (match) {
+            const [, dia, mes, año] = match;
+            const mesNum = meses[mes.toLowerCase()];
+            if (mesNum !== undefined) {
+              taskDate = new Date(parseInt(año), mesNum, parseInt(dia));
+              taskDate.setHours(0, 0, 0, 0);
+            }
           } else {
-            // Intentar parsear fecha en formato "15 dic 2024"
+            // Intentar parseo estándar
             taskDate = new Date(task.dueDate);
+            if (isNaN(taskDate.getTime())) {
+              taskDate = null;
+            } else {
+              taskDate.setHours(0, 0, 0, 0);
+            }
           }
-          taskDate?.setHours(0, 0, 0, 0);
+        }
+        
+        // Si no se pudo parsear la fecha, no aplicar filtro
+        if (!taskDate || isNaN(taskDate.getTime())) {
+          return false;
         }
         
         if (dateFilter === 'hoy') {
-          if (!taskDate || taskDate.getTime() !== today.getTime()) return false;
+          return taskDate.getTime() === today.getTime();
         } else if (dateFilter === 'esta-semana') {
-          if (!taskDate) return false;
-          const weekFromNow = new Date(today);
-          weekFromNow.setDate(today.getDate() + 7);
-          if (taskDate < today || taskDate > weekFromNow) return false;
+          const endOfWeek = new Date(today);
+          endOfWeek.setDate(today.getDate() + 7);
+          return taskDate >= today && taskDate <= endOfWeek;
         } else if (dateFilter === 'este-mes') {
-          if (!taskDate) return false;
-          if (taskDate.getMonth() !== today.getMonth() || taskDate.getFullYear() !== today.getFullYear()) return false;
+          return taskDate.getMonth() === today.getMonth() && 
+                 taskDate.getFullYear() === today.getFullYear() &&
+                 taskDate >= today;
         } else if (dateFilter === 'vencidas') {
-          if (task.dueDate === 'Vencida') return true;
-          if (!taskDate || taskDate >= today) return false;
+          return taskDate < today;
         }
       }
 
@@ -206,103 +112,56 @@ const TaskList = ({ tasks = [], filters = [], onFilterRemove, onClearFilters }) 
     });
   };
 
-  // Crear array de filtros activos para mostrar chips
-  const getActiveFiltersForDisplay = () => {
-    const displayFilters = [...filters]; // Mantener filtros externos
-    
-    if (priorityFilter) {
-      displayFilters.push({
-        id: 'priority-local',
-        label: 'Prioridad',
-        value: priorityFilter
-      });
-    }
-    if (dateFilter) {
-      displayFilters.push({
-        id: 'date-local',
-        label: 'Fecha',
-        value: dateOptions.find(o => o.value === dateFilter)?.label
-      });
-    }
-    if (boardFilter) {
-      displayFilters.push({
-        id: 'board-local',
-        label: 'Tablero',
-        value: boardOptions.find(o => o.value === boardFilter)?.label
-      });
-    }
-    
-    return displayFilters;
-  };
-
-  const handleRemoveFilterLocal = (filterId) => {
-    if (filterId === 'priority-local') {
-      setPriorityFilter(null);
-    } else if (filterId === 'date-local') {
-      setDateFilter(null);
-    } else if (filterId === 'board-local') {
-      setBoardFilter(null);
-    } else {
-      // Es un filtro externo
-      onFilterRemove && onFilterRemove(filterId);
-    }
-  };
-
-  const handleClearAllLocal = () => {
-    setPriorityFilter(null);
-    setDateFilter(null);
-    setBoardFilter(null);
-    onClearFilters && onClearFilters();
-  };
-
   const handleTaskCheck = (taskId) => {
     console.log('Task checked:', taskId);
   };
 
   const handleTaskEdit = (task) => {
-    console.log('Task edit:', task);
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleTaskDelete = (taskId) => {
+    if (onTaskDelete) {
+      onTaskDelete(taskId);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null);
+  };
+
+  const handleTaskUpdated = (updatedTask) => {
+    if (onTaskUpdate) {
+      onTaskUpdate(updatedTask);
+    }
+    handleModalClose();
+  };
+
+  const handleTaskDeleted = (taskId) => {
+    if (onTaskDelete) {
+      onTaskDelete(taskId);
+    }
+    handleModalClose();
   };
 
   const filteredTasks = getFilteredTasks();
-  const displayFilters = getActiveFiltersForDisplay();
 
   return (
     <div className="task-list-container">
-      {/* Filtros desplegables */}
-      <div style={{
-        display: 'flex',
-        gap: '10px',
-        marginBottom: '16px',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        padding: '0 4px'
-      }}>
-        <FilterIcon />
-        <FilterDropdown
-          label="Prioridad"
-          options={priorityOptions}
-          value={priorityFilter}
-          onChange={setPriorityFilter}
-        />
-        <FilterDropdown
-          label="Fecha de entrega"
-          options={dateOptions}
-          value={dateFilter}
-          onChange={setDateFilter}
-        />
-        <FilterDropdown
-          label="Tablero"
-          options={boardOptions}
-          value={boardFilter}
-          onChange={setBoardFilter}
-        />
-      </div>
-
-      {/* Chips de filtros activos */}
+      {/* Componente de filtros */}
       <TaskFilters 
-        activeFilters={displayFilters}
-        onRemoveFilter={handleRemoveFilterLocal}
-        onClearAll={handleClearAllLocal}
+        tasks={tasks}
+        activeFilters={filters}
+        onFilterRemove={onFilterRemove}
+        onClearAll={onClearFilters}
+        priorityFilter={priorityFilter}
+        dateFilter={dateFilter}
+        boardFilter={boardFilter}
+        onPriorityChange={setPriorityFilter}
+        onDateChange={setDateFilter}
+        onBoardChange={setBoardFilter}
       />
 
       <div className="task-list-header">
@@ -330,6 +189,7 @@ const TaskList = ({ tasks = [], filters = [], onFilterRemove, onClearFilters }) 
                 task={task}
                 onCheck={handleTaskCheck}
                 onEdit={handleTaskEdit}
+                onDelete={handleTaskDelete}
               />
             ))
           ) : (
@@ -360,6 +220,16 @@ const TaskList = ({ tasks = [], filters = [], onFilterRemove, onClearFilters }) 
           </button>
         </div>
       </div>
+
+      {/* Modal de Edición */}
+      <EditTaskModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        task={selectedTask}
+        boards={boards}
+        onTaskUpdate={handleTaskUpdated}
+        onTaskDelete={handleTaskDeleted}
+      />
     </div>
   );
 };

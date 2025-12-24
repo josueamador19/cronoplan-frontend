@@ -136,7 +136,6 @@ const handleSaveEdit = async (e) => {
       const statusMap = {
         'Sin categoría': 'todo', 
         'En progreso': 'progress',
-        'En revisión': 'review',
         'Completada': 'done'
       };
       
@@ -252,7 +251,7 @@ const handleSaveEdit = async (e) => {
     due_time: editData.due_time ?? ''
   };
 
-  const currentStatusLabel = statuses.find(s => s.value === (isEditing ? safeEditData.status : task.status))?.label || '📋 Por hacer';
+  const currentStatusLabel = statuses.find(s => s.value === (isEditing ? safeEditData.status : task.column))?.label || '📋 Por hacer';
   
   // Obtener el boardId correcto (camelCase o snake_case)
   const taskBoardId = task.boardId ?? task.board_id ?? '';
@@ -536,7 +535,9 @@ const handleSaveEdit = async (e) => {
             )}
 
             {/* Asignado */}
-            {task.assignee && (
+            {/**
+             * 
+             * {task.assignee && (
               <div style={{ marginBottom: '24px' }}>
                 <label style={{
                   display: 'block',
@@ -568,6 +569,8 @@ const handleSaveEdit = async (e) => {
                 </div>
               </div>
             )}
+             * 
+             */}
           </div>
         ) : (
           // Vista de Edición
