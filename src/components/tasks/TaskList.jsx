@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import TaskRow from './TaskRow';
 import TaskFilters from './TaskFilters';
 import EditTaskModal from '../modals/EditTaskModal';
+import { deleteTask } from '../services/tasksService';
 import '../../styles/TaskList.css';
 
 const TaskList = ({ 
@@ -11,17 +13,24 @@ const TaskList = ({
   onClearFilters,
   boards = [],
   onTaskUpdate,
-  onTaskDelete 
+  onTaskDelete,
+  onRefresh 
 }) => {
   const [priorityFilter, setPriorityFilter] = useState(null);
   const [dateFilter, setDateFilter] = useState(null);
   const [boardFilter, setBoardFilter] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [localTasks, setLocalTasks] = useState(tasks);
+
+  
+  React.useEffect(() => {
+    setLocalTasks(tasks);
+  }, [tasks]);
 
   // Función de filtrado
   const getFilteredTasks = () => {
-    return tasks.filter(task => {
+    return localTasks.filter(task => {
       // Filtro por prioridad
       if (priorityFilter && task.priority !== priorityFilter) {
         return false;
@@ -121,9 +130,33 @@ const TaskList = ({
     setIsModalOpen(true);
   };
 
-  const handleTaskDelete = (taskId) => {
-    if (onTaskDelete) {
-      onTaskDelete(taskId);
+  const handleTaskDelete = async (taskId) => {
+    const taskToDelete = localTasks.find(t => t.id === taskId);
+    const taskTitle = taskToDelete ? taskToDelete.title : 'esta tarea';
+    
+    if (!window.confirm(`¿Estás seguro de eliminar "${taskTitle}"?`)) {
+      return;
+    }
+
+    try {
+      await deleteTask(taskId);
+      console.log('✅ Tarea eliminada:', taskId);
+      
+      // Actualizar estado local inmediatamente
+      setLocalTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      
+      // Notificar al componente padre
+      if (onTaskDelete) {
+        onTaskDelete(taskId);
+      }
+      
+      // Si hay función de refresh, llamarla
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('❌ Error al eliminar tarea:', error);
+      alert('Error al eliminar la tarea');
     }
   };
 
@@ -133,16 +166,40 @@ const TaskList = ({
   };
 
   const handleTaskUpdated = (updatedTask) => {
+    // Actualizar estado local
+    setLocalTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === updatedTask.id ? updatedTask : task
+      )
+    );
+    
+    // Notificar al padre
     if (onTaskUpdate) {
       onTaskUpdate(updatedTask);
     }
+    
+    // Refrescar si es necesario
+    if (onRefresh) {
+      onRefresh();
+    }
+    
     handleModalClose();
   };
 
   const handleTaskDeleted = (taskId) => {
+    // Actualizar estado local
+    setLocalTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    
+    // Notificar al padre
     if (onTaskDelete) {
       onTaskDelete(taskId);
     }
+    
+    // Refrescar si es necesario
+    if (onRefresh) {
+      onRefresh();
+    }
+    
     handleModalClose();
   };
 
@@ -152,7 +209,7 @@ const TaskList = ({
     <div className="task-list-container">
       {/* Componente de filtros */}
       <TaskFilters 
-        tasks={tasks}
+        tasks={localTasks}
         activeFilters={filters}
         onFilterRemove={onFilterRemove}
         onClearAll={onClearFilters}
@@ -209,7 +266,7 @@ const TaskList = ({
 
       <div className="task-pagination">
         <div className="pagination-info">
-          Mostrando {filteredTasks.length} de {tasks.length} actividades
+          Mostrando {filteredTasks.length} de {localTasks.length} actividades
         </div>
         <div className="pagination-controls">
           <button className="pagination-btn" disabled>
