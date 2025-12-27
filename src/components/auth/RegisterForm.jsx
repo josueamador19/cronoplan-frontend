@@ -5,7 +5,7 @@ import PasswordInput from '../ui/PasswordInput';
 import GoogleButton from './GoogleButton';
 import AuthFooter from './AuthFooter';
 import { authTexts } from '../../constants/authdata';
-import { registerUser, saveAuthData } from '../services/authService';
+import { registerUser, saveAuthData, startTokenRefreshTimer } from '../services/authService'; // ✅ Agregar import
 
 const RegisterForm = ({ onGoogleLogin }) => {
   const navigate = useNavigate();
@@ -90,8 +90,9 @@ const RegisterForm = ({ onGoogleLogin }) => {
         // Guardar token y usuario
         saveAuthData(response);
         
-        
-        //console.log('Usuario registrado exitosamente:', response.user);
+      
+        startTokenRefreshTimer();
+        console.log('✅ Registro exitoso y timer iniciado');
         
         // Redirigir al dashboard
         navigate('/dashboard');

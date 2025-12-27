@@ -497,3 +497,126 @@ export const updateStoredUserName = (fullName) => {
     window.dispatchEvent(new Event('userUpdated'));
   }
 };
+// =====================================================
+// INICIALIZACIÓN Y RENOVACIÓN AUTOMÁTICA DE TOKENS
+// =====================================================
+
+/**
+ * Verificar y renovar tokens al iniciar la aplicación
+ */
+export const initializeAuth = async () => {
+  const accessToken = getStoredToken();
+  const refreshToken = getStoredRefreshToken();
+
+  // Si no hay tokens, no hacer nada
+  if (!accessToken && !refreshToken) {
+    //console.log('No hay tokens almacenados');
+    return false;
+  }
+
+  // Si hay refresh token pero no access token, renovar
+  if (!accessToken && refreshToken) {
+    try {
+      //console.log('Renovando token al iniciar...');
+      await refreshAccessToken();
+      //console.log('Token renovado exitosamente al iniciar');
+      return true;
+    } catch (error) {
+      console.error('Error al renovar token al iniciar:', error);
+      clearAuthData();
+      return false;
+    }
+  }
+
+  // Si hay access token, verificar si está próximo a expirar
+  if (accessToken) {
+    try {
+      // Decodificar el token para ver su expiración
+      const tokenParts = accessToken.split('.');
+      if (tokenParts.length !== 3) {
+        throw new Error('Token inválido');
+      }
+
+      const tokenData = JSON.parse(atob(tokenParts[1]));
+      const expiresAt = tokenData.exp * 1000; // Convertir a milisegundos
+      const now = Date.now();
+      const timeUntilExpiry = expiresAt - now;
+
+      // Si ya expiró o expira en menos de 5 minutos, renovar
+      if (timeUntilExpiry < 5 * 60 * 1000) {
+        //console.log('Token próximo a expirar, renovando preventivamente...');
+        await refreshAccessToken();
+        //console.log('Token renovado preventivamente');
+      } else {
+        console.log('Token válido');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error al verificar token:', error);
+      // Si hay error al decodificar, intentar renovar con refresh token
+      if (refreshToken) {
+        try {
+          //console.log('Intentando renovar token...');
+          await refreshAccessToken();
+          //console.log('Token renovado después de error');
+          return true;
+        } catch (refreshError) {
+          console.error('Error al renovar token:', refreshError);
+          clearAuthData();
+          return false;
+        }
+      }
+      return false;
+    }
+  }
+
+  return false;
+};
+
+// Variable para almacenar el intervalo
+let tokenRefreshInterval = null;
+
+/**
+ * Iniciar renovación automática de tokens
+ * Renueva el token cada 50 minutos (antes de que expire)
+ */
+export const startTokenRefreshTimer = () => {
+  // Limpiar intervalo anterior si existe
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+  }
+
+  //console.log('Timer de renovación automática iniciado');
+
+  // Renovar cada 50 minutos (10 minutos antes de que expire el token de 60 min)
+  tokenRefreshInterval = setInterval(async () => {
+    const refreshToken = getStoredRefreshToken();
+    
+    if (refreshToken && isAuthenticated()) {
+      try {
+        //console.log('Renovación automática de token (cada 50 min)...');
+        await refreshAccessToken();
+        //console.log('Token renovado automáticamente');
+      } catch (error) {
+        console.error('Error en renovación automática:', error);
+        clearInterval(tokenRefreshInterval);
+        handleSessionExpired('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+      }
+    } else {
+      //console.log('Deteniendo timer - no hay tokens');
+      clearInterval(tokenRefreshInterval);
+    }
+  }, 50 * 60 * 1000); // 50 minutos
+};
+
+/**
+ * Detener renovación automática de tokens
+ */
+export const stopTokenRefreshTimer = () => {
+  if (tokenRefreshInterval) {
+    //console.log('Timer de renovación automática detenido');
+    clearInterval(tokenRefreshInterval);
+    tokenRefreshInterval = null;
+  }
+};

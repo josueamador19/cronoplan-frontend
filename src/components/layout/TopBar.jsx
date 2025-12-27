@@ -3,7 +3,7 @@ import { FaUserEdit, FaSignOutAlt } from 'react-icons/fa';
 import Button from '../ui/Button';
 import CreateBoardModal from '../modals/CreateBoardModal';
 import CreateTaskModal from '../modals/CreateTaskModal';
-import { logoutUser, getStoredUser } from '../services/authService';
+import { logoutUser, getStoredUser, stopTokenRefreshTimer } from '../services/authService'; // ✅ Agregar import
 import { useNavigate } from 'react-router-dom';
 
 const TopBar = ({
@@ -52,9 +52,23 @@ const TopBar = ({
   }, []);
 
   const handleLogout = async () => {
-    setIsMenuOpen(false);
-    await logoutUser();
-    navigate('/');
+    try {
+      setIsMenuOpen(false);
+      
+      // Detener renovación automática de tokens
+      stopTokenRefreshTimer();
+      //console.log('Timer de renovación detenido');
+      
+      // Cerrar sesión
+      await logoutUser();
+      
+      // Redirigir a la landing page
+      navigate('/');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      // Redirigir aunque haya error
+      navigate('/');
+    }
   };
 
   const handleEditProfile = () => {

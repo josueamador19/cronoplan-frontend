@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 import LandingPage from './pages/LandingPage';
@@ -11,9 +11,13 @@ import CalendarPage from './pages/CalendarPage';
 import DashboardPage from './pages/DashboardPage';
 import Profile from './pages/Profile';
 import RemindersPage from './pages/RemindersPage';
-import { isAuthenticated } from './components/services/authService';
+import { 
+  isAuthenticated, 
+  initializeAuth, 
+  startTokenRefreshTimer 
+} from './components/services/authService';
 import SessionExpiredNotification from './components/ui/SessionExpiredNotification';
-import ProtectedRoute from './components/auth/ProtectedRoute'; // ⭐ IMPORTAR EL NUEVO
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import './App.css';
 
 // ===============================
@@ -26,10 +30,81 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+// ===============================
+// LOADING COMPONENT
+// ===============================
+const LoadingScreen = () => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      backgroundColor: '#f0f2f5',
+      gap: '20px'
+    }}
+  >
+    <div
+      style={{
+        width: '50px',
+        height: '50px',
+        border: '4px solid #f3f3f3',
+        borderTop: '4px solid #1890ff',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+      }}
+    />
+    <p style={{ color: '#666', fontSize: '16px' }}>Verificando sesión...</p>
+    
+    <style>
+      {`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}
+    </style>
+  </div>
+);
+
 function App() {
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      //console.log('Verificando autenticación al iniciar...');
+      
+      if (isAuthenticated()) {
+        try {
+          // Verificar y renovar tokens si es necesario
+          await initializeAuth();
+          
+          // Iniciar timer de renovación automática
+          startTokenRefreshTimer();
+          
+          //console.log(' Autenticación verificada exitosamente');
+        } catch (error) {
+          console.error(' Error al inicializar autenticación:', error);
+        }
+      } else {
+        console.log('Usuario no autenticado');
+      }
+      
+      setIsAuthChecked(true);
+    };
+
+    checkAuth();
+  }, []);
+
+  // Mostrar loader mientras se verifica la autenticación
+  if (!isAuthChecked) {
+    return <LoadingScreen />;
+  }
+
   return (
     <Router>
-      {/* ⭐ NOTIFICACIÓN GLOBAL DE SESIÓN EXPIRADA */}
+      {/* NOTIFICACIÓN GLOBAL DE SESIÓN EXPIRADA */}
       <SessionExpiredNotification />
       
       <Routes>

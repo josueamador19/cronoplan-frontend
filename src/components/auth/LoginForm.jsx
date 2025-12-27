@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InputField from '../ui/InputField';
@@ -6,7 +5,7 @@ import PasswordInput from '../ui/PasswordInput';
 import GoogleButton from './GoogleButton';
 import AuthFooter from './AuthFooter';
 import { authTexts } from '../../constants/authdata';
-import { loginUser, saveAuthData } from '../services/authService';
+import { loginUser, saveAuthData, startTokenRefreshTimer } from '../services/authService'; // ✅ Agregar import
 
 const LoginForm = ({ onGoogleLogin }) => {
   const navigate = useNavigate();
@@ -75,7 +74,8 @@ const LoginForm = ({ onGoogleLogin }) => {
         saveAuthData(response);
         
         
-        //console.log('Login exitoso:', response.user);
+        startTokenRefreshTimer();
+        //console.log(' Login exitoso y timer iniciado');
         
         // Verificar si hay una URL de redirección guardada
         const redirectPath = localStorage.getItem('redirect_after_login');
