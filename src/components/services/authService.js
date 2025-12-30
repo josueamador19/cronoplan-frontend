@@ -21,6 +21,21 @@ export const api = axios.create({
 // INTERCEPTOR PARA MANEJAR SESIÓN Y REFRESH TOKENS
 // =====================================================
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
 // Función para configurar interceptores (reutilizable)
 const setupInterceptors = (axiosInstance) => {
   // Interceptor de Request - Adjunta el token automáticamente
@@ -49,34 +64,55 @@ const setupInterceptors = (axiosInstance) => {
       if (
         error.response?.status === 401 && 
         !originalRequest._retry &&
-        !originalRequest.url?.includes('/auth/refresh')
+        !originalRequest.url.includes('/auth/refresh')
       ) {
+        
+        // Si ya estamos refrescando, agregar a la cola
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(token => {
+              originalRequest.headers['Authorization'] = 'Bearer ' + token;
+              return axiosInstance(originalRequest);
+            })
+            .catch(err => {
+              return Promise.reject(err);
+            });
+        }
+
         originalRequest._retry = true;
+        isRefreshing = true;
+
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        // Si no hay refresh token, cerrar sesión
+        if (!refreshToken) {
+          console.log('No hay refresh token - Cerrando sesión');
+          isRefreshing = false;
+          handleSessionExpired('Tu sesión ha expirado');
+          return Promise.reject(error);
+        }
 
         try {
-          const refreshToken = localStorage.getItem('refresh_token');
+          // ✅ USAR UNA INSTANCIA LIMPIA DE AXIOS PARA REFRESH
+          console.log('🔄 Intentando renovar token...');
           
-          if (!refreshToken) {
-            throw new Error('No refresh token available');
-          }
-
-          // CREAR UNA INSTANCIA NUEVA DE AXIOS PARA CADA REFRESH
-          // Esto evita que se active el interceptor recursivamente
-          const freshAxios = axios.create({
-            baseURL: API_BASE_URL,
-            headers: { 'Content-Type': 'application/json' }
-          });
-
-          //console.log('Renovando token...');
-          
-          const refreshResponse = await freshAxios.post('/auth/refresh', {
-            refresh_token: refreshToken
-          });
+          const refreshResponse = await axios.post(
+            `${API_BASE_URL}/auth/refresh`,
+            { refresh_token: refreshToken },
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          );
 
           const { access_token, refresh_token: newRefreshToken, user } = refreshResponse.data;
 
+          // Validar que recibimos los tokens
           if (!access_token || !newRefreshToken) {
-            throw new Error('Invalid refresh response');
+            throw new Error('Respuesta de refresh incompleta');
           }
 
           // Guardar nuevos tokens
@@ -86,22 +122,27 @@ const setupInterceptors = (axiosInstance) => {
             localStorage.setItem('user', JSON.stringify(user));
           }
 
-          //console.log('Token renovado exitosamente');
+          console.log('✅ Token renovado exitosamente');
 
-          // Actualizar el request original con el nuevo token
+          // Actualizar header del request original
           originalRequest.headers['Authorization'] = 'Bearer ' + access_token;
           
+          // Procesar la cola de requests pendientes
+          processQueue(null, access_token);
+          
+          isRefreshing = false;
+
           // Reintentar el request original
           return axiosInstance(originalRequest);
 
         } catch (refreshError) {
-          console.error('Error al renovar token:', refreshError.response?.data || refreshError.message);
+          console.error('❌ Error al renovar token:', refreshError.response?.data || refreshError.message);
           
-          // Solo cerrar sesión si el refresh token realmente expiró
-          if (refreshError.response?.status === 401) {
-            handleSessionExpired('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
-          }
+          // Si el refresh token también expiró, cerrar sesión
+          processQueue(refreshError, null);
+          isRefreshing = false;
           
+          handleSessionExpired('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
           return Promise.reject(refreshError);
         }
       }
@@ -279,15 +320,15 @@ export const refreshAccessToken = async () => {
       throw new Error('No hay refresh token');
     }
     
-    // Usar instancia limpia de axios para evitar interceptores
-    const freshAxios = axios.create({
-      baseURL: API_BASE_URL,
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    const response = await freshAxios.post('/auth/refresh', {
-      refresh_token: refreshToken
-    });
+    const response = await axios.post(
+      `${API_BASE_URL}/auth/refresh`,
+      { refresh_token: refreshToken },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
     
     const { access_token, refresh_token: newRefreshToken, user } = response.data;
     
@@ -456,7 +497,6 @@ export const updateStoredUserName = (fullName) => {
     window.dispatchEvent(new Event('userUpdated'));
   }
 };
-
 // =====================================================
 // INICIALIZACIÓN Y RENOVACIÓN AUTOMÁTICA DE TOKENS
 // =====================================================
@@ -470,15 +510,16 @@ export const initializeAuth = async () => {
 
   // Si no hay tokens, no hacer nada
   if (!accessToken && !refreshToken) {
+    //console.log('No hay tokens almacenados');
     return false;
   }
 
   // Si hay refresh token pero no access token, renovar
   if (!accessToken && refreshToken) {
     try {
-      console.log('Renovando token al iniciar...');
+      //console.log('Renovando token al iniciar...');
       await refreshAccessToken();
-      console.log('Token renovado exitosamente al iniciar');
+      //console.log('Token renovado exitosamente al iniciar');
       return true;
     } catch (error) {
       console.error('Error al renovar token al iniciar:', error);
@@ -503,9 +544,9 @@ export const initializeAuth = async () => {
 
       // Si ya expiró o expira en menos de 5 minutos, renovar
       if (timeUntilExpiry < 5 * 60 * 1000) {
-        console.log('Token próximo a expirar, renovando preventivamente...');
+        //console.log('Token próximo a expirar, renovando preventivamente...');
         await refreshAccessToken();
-        console.log('Token renovado preventivamente');
+        //console.log('Token renovado preventivamente');
       } else {
         console.log('Token válido');
       }
@@ -516,9 +557,9 @@ export const initializeAuth = async () => {
       // Si hay error al decodificar, intentar renovar con refresh token
       if (refreshToken) {
         try {
-          console.log('Intentando renovar token...');
+          //console.log('Intentando renovar token...');
           await refreshAccessToken();
-          console.log('Token renovado después de error');
+          //console.log('Token renovado después de error');
           return true;
         } catch (refreshError) {
           console.error('Error al renovar token:', refreshError);
@@ -546,37 +587,24 @@ export const startTokenRefreshTimer = () => {
     clearInterval(tokenRefreshInterval);
   }
 
-  console.log('Timer de renovación automática iniciado');
+  //console.log('Timer de renovación automática iniciado');
 
   // Renovar cada 50 minutos (10 minutos antes de que expire el token de 60 min)
   tokenRefreshInterval = setInterval(async () => {
     const refreshToken = getStoredRefreshToken();
-    const accessToken = getStoredToken();
     
-    // Solo renovar si hay tokens y la sesión está activa
-    if (refreshToken && accessToken) {
+    if (refreshToken && isAuthenticated()) {
       try {
-        // Verificar si el token está próximo a expirar
-        const tokenParts = accessToken.split('.');
-        if (tokenParts.length === 3) {
-          const tokenData = JSON.parse(atob(tokenParts[1]));
-          const expiresAt = tokenData.exp * 1000;
-          const now = Date.now();
-          const timeUntilExpiry = expiresAt - now;
-          
-          // Solo renovar si expira en menos de 10 minutos
-          if (timeUntilExpiry < 10 * 60 * 1000) {
-            console.log('🔄 Renovación preventiva automática...');
-            await refreshAccessToken();
-            console.log('✅ Token renovado preventivamente');
-          }
-        }
+        //console.log('Renovación automática de token (cada 50 min)...');
+        await refreshAccessToken();
+        //console.log('Token renovado automáticamente');
       } catch (error) {
-        console.error('Error en renovación preventiva:', error);
-        // No cerrar sesión aquí, solo logear el error
+        console.error('Error en renovación automática:', error);
+        clearInterval(tokenRefreshInterval);
+        handleSessionExpired('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
       }
     } else {
-      console.log('Deteniendo timer - no hay tokens');
+      //console.log('Deteniendo timer - no hay tokens');
       clearInterval(tokenRefreshInterval);
     }
   }, 50 * 60 * 1000); // 50 minutos
@@ -587,7 +615,7 @@ export const startTokenRefreshTimer = () => {
  */
 export const stopTokenRefreshTimer = () => {
   if (tokenRefreshInterval) {
-    console.log('Timer de renovación automática detenido');
+    //console.log('Timer de renovación automática detenido');
     clearInterval(tokenRefreshInterval);
     tokenRefreshInterval = null;
   }
