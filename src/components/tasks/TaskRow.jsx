@@ -38,7 +38,9 @@ const TaskRow = ({ task, onCheck, onEdit, onDelete }) => {
 
   const handleDelete = () => {
     setShowDropdown(false);
-    onDelete && onDelete(task.id);
+    if (window.confirm(`¿Estás seguro de eliminar la tarea "${task.title}"?`)) {
+      onDelete && onDelete(task.id);
+    }
   };
 
   return (
@@ -124,7 +126,7 @@ const TaskRow = ({ task, onCheck, onEdit, onDelete }) => {
                 onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
               >
-                <FaEdit size={14} /> Editar
+                <FaEdit size={14} /> Ver
               </button>
               <button 
                 onClick={handleDelete}
